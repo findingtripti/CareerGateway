@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.utils.http import url_has_allowed_host_and_scheme
 
 from .models import StudentProfile
 
@@ -62,6 +63,15 @@ def student_login(request):
 
         if user is not None:
             login(request, user)
+
+            next_url = request.GET.get("next","")
+            if url_has_allowed_host_and_scheme(
+                next_url,
+                allowed_hosts={request.get_host()},
+                require_https=request.is_secure(),
+            ):
+                return redirect(next_url)
+
             return redirect("home")
 
         messages.error(request, "Invalid username or password.")

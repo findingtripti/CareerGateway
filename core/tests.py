@@ -119,6 +119,50 @@ class LoginLogoutTests(TestCase):
         self.client.get(reverse("logout"))
         self.assertIn("_auth_user_id", self.client.session)
 
+class LoginRedirectTests(TestCase):
+    """After login, students return to the page they originally wanted."""
+
+    def setUp(self):
+        User.objects.create_user("student1", password="StrongPass#123")
+        self.credentials = {
+            "username": "student1",
+            "password": "StrongPass#123",
+        }
+
+    def login_url_with_next(self, next_value):
+        return reverse("login") + "?next=" + next_value
+
+    def test_protected_page_sends_visitor_to_login_with_next(self):
+        response = self.client.get(reverse("profile"))
+        self.assertEqual(
+            response.url,
+            reverse("login") + "?next=" + reverse("profile"),
+        )
+
+    def test_login_redirects_to_requested_page(self):
+        response = self.client.post(
+            self.login_url_with_next(reverse("profile")), self.credentials
+        )
+        self.assertRedirects(response, reverse("profile"))
+
+    def test_login_without_next_goes_home(self):
+        response = self.client.post(reverse("login"), self.credentials)
+        self.assertRedirects(response, reverse("home"))
+
+    def test_login_ignores_external_next_url(self):
+        response = self.client.post(
+            self.login_url_with_next("https://evil.example.com/"),
+            self.credentials,
+        )
+        self.assertRedirects(response, reverse("home"))
+
+    def test_login_ignores_protocol_relative_next_url(self):
+        response = self.client.post(
+            self.login_url_with_next("//evil.example.com"),
+            self.credentials,
+        )
+        self.assertRedirects(response, reverse("home"))
+
 
 class ProfileTests(TestCase):
     def setUp(self):
