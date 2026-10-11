@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Career Gateway{% endblock %}</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6fb;
+            color: #222;
+            margin: 0;
+            padding: 0;
+        }
+
+        .navbar {
+            background: #243b6b;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .brand {
+            color: white;
+            font-size: 21px;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 9px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .nav-links a:hover,
+        .nav-links a:focus-visible {
+            background: #3a548a;
+        }
+
+        a:focus-visible,
+        button:focus-visible,
+        input:focus-visible {
+            outline: 3px solid #f5a623;
+            outline-offset: 2px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 48px auto;
+            padding: 32px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .container.narrow {
+            max-width: 460px;
+        }
+
+        h1 {
+            color: #243b6b;
+            font-size: 30px;
+            line-height: 1.25;
+            margin-top: 0;
+        }
+
+        p {
+            line-height: 1.7;
+        }
+
+        .message {
+            padding: 12px 14px;
+            border-radius: 8px;
+            margin: 0 0 12px;
+            font-size: 14px;
+            line-height: 1.5;
+            background: #eef3ff;
+            border: 1px solid #c9d6f2;
+        }
+
+        .message.error {
+            background: #fdecea;
+            border-color: #f2b8b5;
+            color: #8a1c14;
+        }
+
+        .message.success {
+            background: #e8f6ec;
+            border-color: #b5dfc0;
+            color: #1c5a2b;
+        }
+
+        .form-field {
+            margin-bottom: 18px;
+        }
+
+        .form-field label {
+            display: block;
+            font-weight: bold;
+            color: #243b6b;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        .form-field input {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid #b9c3d9;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        .form-hint {
+            font-size: 13px;
+            color: #55607a;
+            margin: 6px 0 0;
+            line-height: 1.5;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 12px 17px;
+            border-radius: 6px;
+            background: #243b6b;
+            color: white;
+            border: 1px solid #243b6b;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .button.full {
+            width: 100%;
+        }
+
+        .form-footer {
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        .form-footer a {
+            color: #243b6b;
+        }
+
+        @media (max-width: 650px) {
+            .container {
+                margin: 24px 14px;
+                padding: 22px;
+            }
+
+            h1 {
+                font-size: 26px;
+            }
+
+            .navbar {
+                padding: 14px 16px;
+            }
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+    <nav class="navbar" aria-label="Main navigation">
+        <a class="brand" href="{% url 'home' %}">Career Gateway</a>
+
+        <div class="nav-links">
+            <a href="{% url 'home' %}">Home</a>
+            <a href="{% url 'careers' %}">Explore Careers</a>
+
+            {% if user.is_authenticated %}
+                <a href="{% url 'assistant' %}">Career Assistant</a>
+                <a href="{% url 'profile' %}">My Profile</a>
+            {% else %}
+                <a href="{% url 'login' %}">Log In</a>
+                <a href="{% url 'signup' %}">Sign Up</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <main class="container {% block container_class %}{% endblock %}">
+        {% if messages %}
+            <div aria-live="polite">
+                {% for message in messages %}
+                    <p class="message {{ message.tags }}">{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

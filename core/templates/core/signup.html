@@ -1,42 +1,45 @@
+{% extends "core/base.html" %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up | Career Gateway</title>
-</head>
-<body>
-    <h1>Create Your Career Gateway Account</h1>
+{% block title %}Sign Up | Career Gateway{% endblock %}
+{% block container_class %}narrow{% endblock %}
+
+{% block content %}
+    <h1>Create your account</h1>
     <p>Start exploring careers, courses, and opportunities.</p>
-
-    {% if messages %}
-        {% for message in messages %}
-            <p>{{ message }}</p>
-        {% endfor %}
-    {% endif %}
 
     <form method="POST">
         {% csrf_token %}
 
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username" required>
+        <div class="form-field">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username"
+                   autocomplete="username" autofocus required>
+        </div>
 
-        <br><br>
+        <div class="form-field">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password"
+                   autocomplete="new-password"
+                   aria-describedby="password-hint" required>
+            <p class="form-hint" id="password-hint">
+                Use at least 8 characters. Avoid common passwords,
+                passwords made only of numbers, and passwords similar
+                to your username.
+            </p>
+        </div>
 
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" required>
+        <div class="form-field">
+            <label for="confirm_password">Confirm password</label>
+            <input type="password" id="confirm_password"
+                   name="confirm_password" autocomplete="new-password"
+                   required>
+        </div>
 
-        <br><br>
-
-        <label for="confirm_password">Confirm Password</label>
-        <input type="password" id="confirm_password" name="confirm_password" required>
-
-        <br><br>
-
-        <button type="submit">Create Account</button>
+        <button type="submit" class="button full">Create Account</button>
     </form>
 
-    <p>Already have an account? <a href="{% url 'login' %}">Log in</a></p>
-</body>
-</html>
+    <p class="form-footer">
+        Already have an account?
+        <a href="{% url 'login' %}">Log in</a>
+    </p>
+{% endblock %}

@@ -1,37 +1,32 @@
+{% extends "core/base.html" %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | Career Gateway</title>
-</head>
-<body>
-    <h1>Welcome Back to Career Gateway</h1>
+{% block title %}Log In | Career Gateway{% endblock %}
+{% block container_class %}narrow{% endblock %}
+
+{% block content %}
+    <h1>Welcome back</h1>
     <p>Log in to continue exploring your career options.</p>
-
-    {% if messages %}
-        {% for message in messages %}
-            <p>{{ message }}</p>
-        {% endfor %}
-    {% endif %}
 
     <form method="POST">
         {% csrf_token %}
 
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username" required>
+        <div class="form-field">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username"
+                   autocomplete="username" autofocus required>
+        </div>
 
-        <br><br>
+        <div class="form-field">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password"
+                   autocomplete="current-password" required>
+        </div>
 
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" required>
-
-        <br><br>
-
-        <button type="submit">Log In</button>
+        <button type="submit" class="button full">Log In</button>
     </form>
 
-    <p>New to Career Gateway? <a href="{% url 'signup' %}">Create an account</a></p>
-</body>
-</html>
+    <p class="form-footer">
+        New to Career Gateway?
+        <a href="{% url 'signup' %}">Create an account</a>
+    </p>
+{% endblock %}

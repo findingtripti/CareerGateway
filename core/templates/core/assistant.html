@@ -165,6 +165,54 @@
                 margin: 14px 0 0;
             }
         }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .option-card {
+            display: block;
+            padding: 14px;
+            background: #f7f9fe;
+            border: 1px solid #d5dcf0;
+            border-radius: 10px;
+            color: #172554;
+            text-decoration: none;
+        }
+
+        .option-card:hover,
+        .option-card:focus-visible {
+            border-color: #172554;
+            background: #eaf0ff;
+        }
+
+        .option-card.selected {
+            border: 2px solid #172554;
+            background: #eaf0ff;
+        }
+
+        .option-card strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .option-card span {
+            font-size: 13px;
+            color: #4b5563;
+        }
+
+        .option-badge {
+            display: inline-block;
+            margin-top: 6px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: #e5e7eb;
+            color: #374151 !important;
+            font-size: 12px !important;
+        }
     </style>
 </head>
 
@@ -181,12 +229,24 @@
 
     <main class="container">
         <section class="intro">
-            <h1>Guided Career Assistant</h1>
+            <h1>{{ welcome_title }}</h1>
 
-            <p>
-                Let's explore career paths based on your education,
-                interests, skills and future goals.
-            </p>
+            <p>{{ welcome_text }}</p>
+
+            <h2>What would you like to do?</h2>
+
+            <div class="options-grid">
+                {% for option in starting_options %}
+                    <a class="option-card{% if option.key == topic %} selected{% endif %}"
+                       href="{% url 'assistant' %}?topic={{ option.key }}#guidance">
+                        <strong>{{ option.label }}</strong>
+                        <span>{{ option.description }}</span>
+                        {% if not option.available %}
+                            <span class="option-badge">Not available yet</span>
+                        {% endif %}
+                    </a>
+                {% endfor %}
+            </div>
 
             {% if profile and profile.full_name %}
                 <p>Welcome, {{ profile.full_name }}!</p>
@@ -202,7 +262,7 @@
             {% endif %}
         </section>
 
-        <section class="chat-box">
+        <section class="chat-box" id="guidance">
             <h2>Your Career Guidance</h2>
 
             <div class="message assistant-message">
@@ -307,9 +367,10 @@
         </section>
 
         <p class="notice">
-            This initial assistant uses predefined career information
-            and profile-based rules. It is not an AI counsellor and
-            does not replace professional career counselling.
+            This assistant helps you explore options using predefined
+            career information and your profile. It does not replace a
+            professional career counsellor, and it cannot tell you
+            which career is right for you.
         </p>
     </main>
 </body>

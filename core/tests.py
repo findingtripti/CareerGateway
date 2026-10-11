@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
+from django.utils.html import escape
 
 from .models import StudentProfile
 
@@ -19,6 +20,36 @@ class PublicPageTests(TestCase):
     def test_login_and_signup_pages_load(self):
         self.assertEqual(self.client.get(reverse("login")).status_code, 200)
         self.assertEqual(self.client.get(reverse("signup")).status_code, 200)
+
+
+class AuthPageAccessibilityTests(TestCase):
+    """Login and signup share the site layout and have usable forms."""
+
+    def test_login_page_has_labelled_fields_and_autocomplete(self):
+        response = self.client.get(reverse("login"))
+        self.assertContains(response, 'for="username"')
+        self.assertContains(response, 'for="password"')
+        self.assertContains(response, 'autocomplete="current-password"')
+
+    def test_signup_page_has_labelled_fields_and_password_hint(self):
+        response = self.client.get(reverse("signup"))
+        self.assertContains(response, 'for="confirm_password"')
+        self.assertContains(response, 'autocomplete="new-password"')
+        self.assertContains(response, "at least 8 characters")
+
+    def test_auth_pages_show_shared_navigation_for_visitors(self):
+        for name in ("login", "signup"):
+            response = self.client.get(reverse(name))
+            self.assertContains(response, 'aria-label="Main navigation"')
+            self.assertContains(response, reverse("careers"))
+            self.assertNotContains(response, reverse("profile"))
+
+    def test_error_message_is_styled_as_error(self):
+        response = self.client.post(reverse("login"), {
+            "username": "nobody",
+            "password": "wrong",
+        })
+        self.assertContains(response, 'class="message error"')
 
 
 class SignupTests(TestCase):
@@ -291,3 +322,80 @@ class AssistantTests(TestCase):
         recommendations = response.context["recommendations"]
         self.assertEqual(len(recommendations), 3)
         self.assertEqual(recommendations[0]["title"], "Software Development")
+
+
+class AssistantStartingOptionsTests(TestCase):
+    """PDF section 3: first conversation and the seven starting options."""
+
+    OPTION_LABELS = [
+        "Choosing a career",
+        "Choosing a course",
+        "Finding colleges",
+        "Scholarships",
+        "Talk to a professional",
+        "Build my career roadmap",
+        "I don't know what I want",
+    ]
+
+    def setUp(self):
+        user = User.objects.create_user(
+            "student1", password="StrongPass#123"
+        )
+        # A saved profile removes the page's own "profile is not available
+        # yet" text, so "not available yet" below can only come from the
+        # topic response.
+        StudentProfile.objects.create(user=user, full_name="Asha Verma")
+        self.client.login(username="student1", password="StrongPass#123")
+
+    def get_assistant(self, topic=None):
+        url = reverse("assistant")
+        if topic:
+            url += "?topic=" + topic
+        return self.client.get(url)
+
+    def test_welcome_text_from_pdf_is_shown(self):
+        response = self.get_assistant()
+        self.assertContains(response, "Welcome to Career Gateway")
+        # Django escapes apostrophes (' becomes &#x27;), so compare escaped.
+        self.assertContains(
+            response,
+            escape(
+                "Let's understand where you want to go and explore the "
+                "paths that can take you there."
+            ),
+        )
+
+    def test_all_seven_starting_options_are_listed(self):
+        response = self.get_assistant()
+        for label in self.OPTION_LABELS:
+            self.assertContains(response, escape(label))
+
+    def test_not_sure_option_preselects_exploring_priority(self):
+        response = self.get_assistant("unsure")
+        self.assertEqual(response.context["priority"], "exploration")
+        self.assertContains(response, "okay")
+
+    def test_unbuilt_feature_is_honest_and_never_claims_booking(self):
+        for topic in ("colleges", "scholarships", "professional"):
+            response = self.get_assistant(topic)
+            self.assertContains(response, "not available yet")
+            self.assertNotContains(response, "has been booked")
+            self.assertNotContains(response, "assigned to you")
+
+    def test_professional_option_uses_pdf_handoff_wording(self):
+        response = self.get_assistant("professional")
+        self.assertContains(
+            response,
+            "A career counsellor can help you evaluate them in more detail.",
+        )
+
+    def test_unknown_topic_is_ignored(self):
+        response = self.get_assistant("<script>alert(1)</script>")
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "<script>alert(1)</script>")
+        self.assertEqual(response.context["topic"], "")
+
+    def test_assistant_states_it_does_not_replace_a_counsellor(self):
+        response = self.get_assistant()
+        self.assertContains(response, "does not replace")
+        self.assertContains(response, "professional career counsellor")

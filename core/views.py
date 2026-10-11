@@ -9,6 +9,12 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.utils.http import url_has_allowed_host_and_scheme
 
+from .assistant_options import (
+    OPTIONS_BY_KEY,
+    STARTING_OPTIONS,
+    WELCOME_TEXT,
+    WELCOME_TITLE,
+)
 from .models import StudentProfile
 
 
@@ -374,6 +380,11 @@ def career_assistant(request):
     student_answer = ""
     recommendations = []
 
+    # Only known option keys are accepted; anything else is ignored.
+    topic = request.GET.get("topic", "")
+    if topic not in OPTIONS_BY_KEY:
+        topic = ""
+
     career_options = [
         {
             "title": "Software Development",
@@ -467,6 +478,8 @@ def career_assistant(request):
         interest = request.POST.get("interest", "").strip()[:2000]
         priority = request.POST.get("priority", "").strip()
         student_answer = interest or "No additional interests provided."
+    elif topic == "unsure":
+        priority = "exploration"
 
     profile_text = ""
 
@@ -603,6 +616,9 @@ def career_assistant(request):
                 "saved in your profile."
             )
 
+        if topic:
+            assistant_message = OPTIONS_BY_KEY[topic]["response"]
+
     return render(
         request,
         "core/assistant.html",
@@ -614,5 +630,9 @@ def career_assistant(request):
             "recommendations": recommendations,
             "assistant_message": assistant_message,
             "priority_labels": priority_labels,
+            "welcome_title": WELCOME_TITLE,
+            "welcome_text": WELCOME_TEXT,
+            "starting_options": STARTING_OPTIONS,
+            "topic": topic,
         },
     )

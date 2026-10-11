@@ -91,6 +91,9 @@ Step	What	Evidence
 2	SECRET_KEY, DEBUG, ALLOWED_HOSTS read from .env via python-dotenv; .env.example added; .gitignore allows .env.example; new secret key generated (old key was public in Git history, so it must stay retired)	manage.py check no issues; site and login worked; commit 31ad931 pushed
 3	4 backup files moved to _archive/ with git mv	git status showed 4 renames; commit f1135fb pushed; pages opened OK
 4	19 automated tests in core/tests.py (public pages, signup, login/logout, profile, assistant)	python manage.py test → Ran 19 tests ... OK
+| 5 | Phase 2: signup password validators (commit 88e4422), profile clear and safe validation (31aacee), login safe `?next=` (342e1cf) | user-run tests and browser checks |
+| 6 | Milestone 1: shared `base.html`, styled login/signup (REQ-16 mobile responsive), assistant PDF §3 welcome text and 7 starting options in `core/assistant_options.py`, PDF §17 disclaimer. Unbuilt options say "not available yet" and never claim a booking | 47 tests OK in a verified copy of the latest zip; desktop and mobile screenshots checked; NOT yet run on the user's machine |
+
 Environment variable names (values never committed): DJANGO_SECRET_KEY, DJANGO_DEBUG, DJANGO_ALLOWED_HOSTS. Run: .\.venv\Scripts\Activate.ps1 → python manage.py runserver. Test: python manage.py test.
 
 11. Known limitations of the tests (honest scope)
