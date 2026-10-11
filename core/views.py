@@ -28,6 +28,7 @@ def signup(request):
         elif User.objects.filter(username=username).exists():
             messages.error(request, "This username is already taken.")
         else:
+            
             try:
                 validate_password(password, user=User(username=username))
             except ValidationError as error:
@@ -75,6 +76,21 @@ def student_logout(request):
 
     return redirect("home")
 
+PROFILE_TEXT_FIELDS = [
+    "full_name",
+    "current_education",
+    "academic_background",
+    "subjects_and_interests",
+    "skills",
+    "career_interests",
+    "preferred_location",
+    "entrance_exams",
+    "career_goals",
+]
+
+# Budget column is DecimalField(max_digits=12, decimal_places=2).
+MAX_BUDGET = Decimal("9999999999.99")
+
 
 @login_required(login_url="login")
 def student_profile(request):
@@ -83,35 +99,18 @@ def student_profile(request):
     )
 
     if request.method == "POST":
-        full_name = request.POST.get("full_name", "").strip()
-        age = request.POST.get("age", "").strip()
-        academic_background = request.POST.get(
-            "academic_background", ""
-        ).strip()
-        skills = request.POST.get("skills", "").strip()
-        current_education = request.POST.get(
-            "current_education", ""
-        ).strip()
-        subjects_and_interests = request.POST.get(
-            "subjects_and_interests", ""
-        ).strip()
-        preferred_location = request.POST.get(
-            "preferred_location", ""
-        ).strip()
-        budget = request.POST.get("budget", "").strip()
-        entrance_exams = request.POST.get(
-            "entrance_exams", ""
-        ).strip()
-        career_goals = request.POST.get("career_goals", "").strip()
-        career_interests = request.POST.get(
-            "career_interests", ""
-        ).strip()
+        # Only fields present in the request are changed. A field that is
+        # present but empty is cleared; a field that is absent is untouched.
+        for field in PROFILE_TEXT_FIELDS:
+            if field in request.POST:
+                setattr(profile, field, request.POST[field].strip())
 
-        if full_name:
-            profile.full_name = full_name
+        if "age" in request.POST:
+            age = request.POST["age"].strip()
 
-        if age:
-            if not age.isdigit() or not 1 <= int(age) <= 120:
+            if not age:
+                profile.age = None
+            elif not age.isdigit() or not 1 <= int(age) <= 120:
                 messages.error(
                     request,
                     "Please enter a valid age between 1 and 120."
@@ -121,41 +120,35 @@ def student_profile(request):
                     "core/profile.html",
                     {"profile": profile}
                 )
+            else:
+                profile.age = int(age)
 
-            profile.age = int(age)
+        if "budget" in request.POST:
+            budget = request.POST["budget"].strip()
 
-        if academic_background:
-            profile.academic_background = academic_background
+            if not budget:
+                profile.budget = None
+            else:
+                try:
+                    budget_value = Decimal(budget)
+                except InvalidOperation:
+                    budget_value = None
 
-        if skills:
-            profile.skills = skills
-
-        if current_education:
-            profile.current_education = current_education
-
-        if subjects_and_interests:
-            profile.subjects_and_interests = subjects_and_interests
-
-        if career_interests:
-            profile.career_interests = career_interests
-
-        if preferred_location:
-            profile.preferred_location = preferred_location
-
-        if entrance_exams:
-            profile.entrance_exams = entrance_exams
-
-        if career_goals:
-            profile.career_goals = career_goals
-
-        if budget:
-            try:
-                budget_value = Decimal(budget)
-
-                if budget_value < 0:
+                if budget_value is None or not budget_value.is_finite():
                     messages.error(
                         request,
-                        "Budget cannot be negative."
+                        "Please enter a valid budget amount."
+                    )
+                    return render(
+                        request,
+                        "core/profile.html",
+                        {"profile": profile}
+                    )
+
+                if budget_value < 0 or budget_value > MAX_BUDGET:
+                    messages.error(
+                        request,
+                        "Budget must be between 0 and 9,999,999,999."
                     )
                     return render(
                         request,
@@ -164,17 +157,6 @@ def student_profile(request):
                     )
 
                 profile.budget = budget_value
-
-            except InvalidOperation:
-                messages.error(
-                    request,
-                    "Please enter a valid budget amount."
-                )
-                return render(
-                    request,
-                    "core/profile.html",
-                    {"profile": profile}
-                )
 
         profile.save()
         messages.success(request, "Profile updated successfully.")
@@ -185,6 +167,7 @@ def student_profile(request):
         "core/profile.html",
         {"profile": profile}
     )
+    
 def career_exploration(request):
     careers = [
         {

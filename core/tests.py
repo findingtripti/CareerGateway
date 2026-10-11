@@ -167,7 +167,61 @@ class ProfileTests(TestCase):
         self.client.login(username="student1", password="StrongPass#123")
         response = self.client.get(reverse("profile"))
         self.assertNotContains(response, "Secret Other Student")
+class ProfileClearAndValidationTests(TestCase):
+    """Students must be able to remove saved details; bad input saves nothing."""
 
+    def setUp(self):
+        self.user = User.objects.create_user(
+            "student1", password="StrongPass#123"
+        )
+        self.profile = StudentProfile.objects.create(
+            user=self.user,
+            full_name="Asha Verma",
+            age=17,
+            skills="python",
+            budget=250000,
+            preferred_location="Delhi",
+        )
+        self.client.login(username="student1", password="StrongPass#123")
+
+    def reload(self):
+        return StudentProfile.objects.get(user=self.user)
+
+    def test_empty_text_value_clears_field(self):
+        self.client.post(reverse("profile"), {"skills": ""})
+        self.assertEqual(self.reload().skills, "")
+
+    def test_empty_age_clears_age(self):
+        self.client.post(reverse("profile"), {"age": ""})
+        self.assertIsNone(self.reload().age)
+
+    def test_empty_budget_clears_budget(self):
+        self.client.post(reverse("profile"), {"budget": ""})
+        self.assertIsNone(self.reload().budget)
+
+    def test_field_missing_from_request_is_left_unchanged(self):
+        self.client.post(reverse("profile"), {"skills": "design"})
+        profile = self.reload()
+        self.assertEqual(profile.skills, "design")
+        self.assertEqual(profile.full_name, "Asha Verma")
+        self.assertEqual(profile.age, 17)
+
+    def test_infinite_budget_is_rejected(self):
+        self.client.post(reverse("profile"), {"budget": "Infinity"})
+        self.assertEqual(self.reload().budget, 250000)
+
+    def test_too_large_budget_is_rejected(self):
+        self.client.post(reverse("profile"), {"budget": "99999999999999"})
+        self.assertEqual(self.reload().budget, 250000)
+
+    def test_failed_validation_saves_nothing(self):
+        self.client.post(reverse("profile"), {
+            "full_name": "Changed Name",
+            "age": "abc",
+        })
+        profile = self.reload()
+        self.assertEqual(profile.full_name, "Asha Verma")
+        self.assertEqual(profile.age, 17)
 
 class AssistantTests(TestCase):
     def setUp(self):
