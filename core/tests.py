@@ -56,6 +56,36 @@ class SignupTests(TestCase):
         })
         self.assertEqual(User.objects.count(), 0)
 
+class SignupPasswordRuleTests(TestCase):
+    """Django's password validators must be enforced at signup."""
+
+    def signup(self, username, password):
+        return self.client.post(reverse("signup"), {
+            "username": username,
+            "password": password,
+            "confirm_password": password,
+        })
+
+    def test_rejects_too_short_password(self):
+        self.signup("shortpw", "ab1#x")
+        self.assertFalse(User.objects.filter(username="shortpw").exists())
+
+    def test_rejects_common_password(self):
+        self.signup("commonpw", "password123")
+        self.assertFalse(User.objects.filter(username="commonpw").exists())
+
+    def test_rejects_numeric_only_password(self):
+        self.signup("numericpw", "84739201847")
+        self.assertFalse(User.objects.filter(username="numericpw").exists())
+
+    def test_rejects_password_similar_to_username(self):
+        self.signup("ashaverma", "ashaverma1")
+        self.assertFalse(User.objects.filter(username="ashaverma").exists())
+
+    def test_weak_password_shows_error_message(self):
+        response = self.signup("shortpw", "ab1#x")
+        self.assertContains(response, "too short")
+
 
 class LoginLogoutTests(TestCase):
     def setUp(self):

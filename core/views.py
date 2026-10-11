@@ -5,6 +5,8 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 
 from .models import StudentProfile
 
@@ -26,6 +28,13 @@ def signup(request):
         elif User.objects.filter(username=username).exists():
             messages.error(request, "This username is already taken.")
         else:
+            try:
+                validate_password(password, user=User(username=username))
+            except ValidationError as error:
+                for message in error.messages:
+                    messages.error(request, message)
+                return render(request, "core/signup.html")
+
             User.objects.create_user(
                 username=username,
                 password=password,
