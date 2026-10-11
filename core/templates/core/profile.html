@@ -1,0 +1,395 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile | Career Gateway</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6fb;
+            color: #222;
+            margin: 0;
+            padding: 30px 16px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            padding: 28px;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            margin-top: 0;
+            color: #243b6b;
+        }
+
+        h2 {
+            margin-top: 26px;
+            color: #243b6b;
+            font-size: 20px;
+        }
+
+        .field {
+            padding: 12px 0;
+            border-bottom: 1px solid #e8eaf0;
+        }
+
+        .label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .value {
+            color: #555;
+            overflow-wrap: anywhere;
+        }
+
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 11px;
+            border: 1px solid #ccd2df;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+
+        button, .button {
+            display: inline-block;
+            margin-top: 16px;
+            margin-right: 8px;
+            padding: 11px 17px;
+            border: none;
+            border-radius: 6px;
+            background: #243b6b;
+            color: white;
+            font-size: 15px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .secondary {
+            background: #e8edf8;
+            color: #243b6b;
+        }
+
+        .message {
+            padding: 12px;
+            background: #d4edda;
+            color: #155724;
+            border-radius: 6px;
+            margin-bottom: 12px;
+        }
+
+        .actions {
+            margin-top: 24px;
+        }
+
+        
+        textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 11px;
+            border: 1px solid #ccd2df;
+            border-radius: 6px;
+            font-size: 15px;
+            font-family: Arial, sans-serif;
+            resize: vertical;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="card">
+
+            <h1>My Career Profile</h1>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <p class="message">{{ message }}</p>
+                {% endfor %}
+            {% endif %}
+
+            <p>
+                Your profile will help Career Gateway understand
+                your interests and provide relevant career guidance.
+            </p>
+
+            <h2>Saved Details</h2>
+
+            <div class="field">
+                <span class="label">Full Name</span>
+                <span class="value">
+                    {{ profile.full_name|default:"Not added yet" }}
+                </span>
+            </div>
+            
+            <div class="field">
+                <span class="label">Age</span>
+                <span class="value">
+                    {{ profile.age|default_if_none:"Not added yet" }}
+                </span>
+            </div>
+
+            <div class="field">
+                <span class="label">Current Education</span>
+                <span class="value">
+                    {{ profile.current_education|default:"Not added yet" }}
+                </span>
+            </div>
+
+            
+            <div class="field">
+                <span class="label">Academic Background</span>
+                <span class="value">
+                     {{ profile.academic_background|default:"Not added yet" }}
+                </span>
+            </div>
+
+            <div class="field">
+                <span class="label">Skills</span>
+                <span class="value">
+                    {{ profile.skills|default:"Not added yet" }}
+                </span>
+            </div>
+
+
+            <div class="field">
+                <span class="label">Subjects and Interests</span>
+                <span class="value">
+                    {{ profile.subjects_and_interests|default:"Not added yet" }}
+                </span>
+            </div>
+
+            <div class="field">
+                <span class="label">Career Interests</span>
+                <span class="value">
+                    {{ profile.career_interests|default:"Not added yet" }}
+                </span>
+            </div>
+            
+            <div class="field">
+                <span class="label">Preferred Location</span>
+                <span class="value">
+                    {{ profile.preferred_location|default:"Not added yet" }}
+                </span>
+            </div>
+
+            <div class="field">
+                <span class="label">Budget</span>
+                <span class="value">
+                    {% if profile.budget %}
+                        ₹{{ profile.budget }}
+                    {% else %}
+                        Not added yet
+                    {% endif %}
+                </span>
+            </div>
+
+            <div class="field">
+                <span class="label">Entrance Exams</span>
+                <span class="value">
+                    {{ profile.entrance_exams|default:"Not added yet" }}
+                </span>
+            </div>
+
+            <div class="field">
+                <span class="label">Career Goals</span>
+                <span class="value">
+                    {{ profile.career_goals|default:"Not added yet" }}
+                </span>
+            </div>
+
+            <h2>Edit Your Details</h2>
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="field">
+                    <label class="label" for="full_name">
+                        Full Name
+                    </label>
+                    <input
+                        type="text"
+                        id="full_name"
+                        name="full_name"
+                        value="{{ profile.full_name }}"
+                        placeholder="Enter your full name"
+                    >
+                </div>
+
+                
+                <div class="field">
+                    <label class="label" for="age">
+                       Age
+                    </label>
+                    <input
+                        type="number"
+                         id="age"
+                         name="age"
+                         min="1"
+                         max="120"
+                         step="1"
+                         value="{{ profile.age|default_if_none:'' }}"
+                         placeholder="Enter your age"
+                    >
+                </div>
+
+
+                <div class="field">
+                    <label class="label" for="current_education">
+                        Current Education
+                    </label>
+                    <input
+                        type="text"
+                        id="current_education"
+                        name="current_education"
+                        value="{{ profile.current_education }}"
+                        placeholder="e.g. B.Tech Computer Science"
+                    >
+                </div>
+
+                
+                <div class="field">
+                    <label class="label" for="academic_background">
+                        Academic Background
+                    </label>
+                    <textarea
+                        id="academic_background"
+                        name="academic_background"
+                        rows="3"
+                        placeholder="e.g. Class 12 PCM, B.Tech CSE, academic achievements"
+                    >{{ profile.academic_background }}</textarea>
+                </div>
+
+                <div class="field">
+                    <label class="label" for="skills">
+                         Skills
+                    </label>
+                    <textarea
+                        id="skills"
+                        name="skills"
+                        rows="3"
+                        placeholder="e.g. Python, SQL, communication, problem-solving"
+                    >{{ profile.skills }}</textarea>
+                </div>
+
+                
+                <div class="field">
+                    <label class="label" for="subjects_and_interests">
+                        Subjects and Interests
+                    </label>
+                    <input
+                        type="text"
+                        id="subjects_and_interests"
+                        name="subjects_and_interests"
+                        value="{{ profile.subjects_and_interests }}"
+                        placeholder="e.g. Mathematics, coding, design"
+                    >
+                </div>
+
+                
+                 <div class="field">
+                     <label class="label" for="career_interests">
+                          Career Interests
+                     </label>
+                     <input
+                         type="text"
+                         id="career_interests"
+                         name="career_interests"
+                         value="{{ profile.career_interests }}"
+                         placeholder="e.g. Software Development, Data Science"
+    >
+                 </div>
+
+                 <div class="field">
+                      <label class="label" for="preferred_location">
+                          Preferred Location
+                      </label>
+                      <input
+                          type="text"
+                          id="preferred_location"
+                          name="preferred_location"
+                          value="{{ profile.preferred_location }}"
+                          placeholder="e.g. Delhi, Noida, Remote"
+                       >
+                 </div>
+
+                 <div class="field">
+                    <label class="label" for="budget">
+                        Budget (₹)
+                    </label>
+                    <input
+                       type="number"
+                       id="budget"
+                       name="budget"
+                       min="0"
+                       step="0.01"
+                       value="{{ profile.budget|default_if_none:'' }}"
+                       placeholder="e.g. 50000"
+                    >
+                 </div>
+
+                 
+                 <div class="field">
+                     <label class="label" for="entrance_exams">
+                         Entrance Exams
+                     </label>
+                     <input
+                         type="text"
+                         id="entrance_exams"
+                         name="entrance_exams"
+                         value="{{ profile.entrance_exams }}"
+                         placeholder="e.g. JEE Main, CUET, NEET, Not decided"
+                     >
+        </div>
+        
+        
+        <div class="field">
+            <label class="label" for="career_goals">
+                Career Goals
+            </label>
+            <input
+                type="text"
+                id="career_goals"
+                name="career_goals"
+                value="{{ profile.career_goals }}"
+                placeholder="e.g. Become a Data Scientist"
+            >
+        </div>
+
+
+
+                 <button type="submit">Save Profile</button>
+             </form>
+
+             <div class="actions">
+                <a href="{% url 'home' %}" class="button">
+                    Back to Home
+                </a>
+
+                <form method="post"
+                      action="{% url 'logout' %}"
+                      style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="secondary">
+                        Log Out
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

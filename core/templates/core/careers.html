@@ -1,0 +1,434 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explore Careers | Career Gateway</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6fb;
+            color: #222;
+            margin: 0;
+            padding: 30px 16px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        h1, h2, h3 {
+            color: #243b6b;
+        }
+
+        .intro {
+            line-height: 1.7;
+            margin-bottom: 24px;
+        }
+
+        .comparison, .career-card {
+            background: white;
+            padding: 22px;
+            border-radius: 12px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
+        }
+
+        .comparison {
+            margin-bottom: 24px;
+        }
+
+        .comparison-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+            margin: 18px 0;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        select, button {
+            width: 100%;
+            padding: 11px;
+            border-radius: 7px;
+            border: 1px solid #cbd3e1;
+            font-size: 15px;
+        }
+
+        button {
+            background: #243b6b;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #182b50;
+        }
+
+        button:focus-visible, select:focus-visible {
+            outline: 3px solid #7b9be8;
+            outline-offset: 2px;
+        }
+
+        #comparison-result {
+            margin-top: 18px;
+            line-height: 1.7;
+            overflow-x: auto;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+            background: white;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            text-align: left;
+            padding: 12px;
+            border: 1px solid #dce2ee;
+            vertical-align: top;
+            overflow-wrap: anywhere;
+        }
+
+        .comparison-table th {
+            background: #edf2ff;
+            color: #243b6b;
+        }
+
+        .career-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 18px;
+        }
+
+        .career-card {
+            overflow-wrap: anywhere;
+        }
+
+        .career-card h2 {
+            margin-top: 0;
+            font-size: 21px;
+        }
+
+        .career-card p {
+            line-height: 1.6;
+        }
+
+        .label {
+            font-weight: bold;
+            color: #243b6b;
+        }
+
+        .match {
+            background: #edf2ff;
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .section-title {
+            margin-top: 22px;
+            padding-top: 12px;
+            border-top: 1px solid #e5e8f0;
+        }
+
+        .note {
+            margin-top: 24px;
+            padding: 16px;
+            background: #e8edf8;
+            border-radius: 8px;
+            line-height: 1.7;
+        }
+
+        a {
+            color: #243b6b;
+        }
+
+        .site-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 24px;
+            padding: 14px 18px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+        }
+
+        .site-nav a {
+           display: inline-block;
+           padding: 8px 10px;
+           border-radius: 6px;
+           text-decoration: none;
+           font-weight: bold;
+        }
+
+        .site-nav a:hover {
+            background: #edf2ff;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 24px;
+        }
+
+        .button-link {
+           display: inline-block;
+           padding: 10px 14px;
+           background: #243b6b;
+           color: white;
+           border-radius: 6px;
+           text-decoration: none;
+        }
+
+        .button-link:hover {
+            background: #182b50;
+        }
+        
+        @media (max-width: 600px) {
+            body {
+                padding: 20px 12px;
+            }
+
+            .career-card, .comparison {
+                padding: 18px;
+            }
+
+            .comparison-table th,
+            .comparison-table td {
+                padding: 8px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<main class="container">
+    <nav class="site-nav" aria-label="Main navigation">
+        <a href="{% url 'home' %}">Home</a>
+        <a href="{% url 'careers' %}">Explore Careers</a>
+    
+        {% if user.is_authenticated %}
+            <a href="{% url 'assistant' %}">Career Assistant</a>
+            <a href="{% url 'profile' %}">My Profile</a>
+        {% else %}
+            <a href="{% url 'login' %}">Log In</a>
+            <a href="{% url 'signup' %}">Sign Up</a>
+        {% endif %}
+    </nav>
+
+    <h1>Explore Career Paths</h1>
+
+    <p class="intro">
+        Explore different careers, understand the work involved,
+        learn about possible education pathways, and identify skills
+        you may want to develop. Compare multiple options before
+        deciding what suits your interests and goals.
+    </p>
+
+    <section class="comparison">
+        <h2>Compare Career Paths</h2>
+
+        <p>
+            Select two different careers to compare their work,
+            skills, education pathways, entrance exams, and job roles.
+        </p>
+
+        <div class="comparison-controls">
+            <div>
+                <label for="career1">First career</label>
+                <select id="career1">
+                    {% for career in careers %}
+                        <option value="{{ career.title }}">{{ career.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="career2">Second career</label>
+                <select id="career2">
+                    {% for career in careers %}
+                        <option value="{{ career.title }}"
+                            {% if forloop.counter == 2 %}selected{% endif %}>
+                            {{ career.title }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <button type="button" id="compare-button">
+            Compare Careers
+        </button>
+
+        <div id="comparison-result" aria-live="polite"></div>
+    </section>
+
+    <div class="career-grid">
+        {% for career in careers %}
+            <article class="career-card">
+                <h2>{{ career.title }}</h2>
+
+                <p>{{ career.description }}</p>
+
+                <div class="match">
+                    <p>
+                        <span class="label">Profile keyword matches:</span>
+                        {{ career.match_count }}
+                    </p>
+
+                    <p>
+                        <span class="label">Why explore this career?</span><br>
+                        {{ career.match_reason }}
+                    </p>
+
+                    <small>
+                        Keyword matches are exploratory signals,
+                        not a suitability score or a guarantee.
+                    </small>
+                </div>
+
+                <h3 class="section-title">What is the work?</h3>
+                <p>{{ career.daily_work }}</p>
+
+                <h3>Skills to explore</h3>
+                <p>{{ career.skills }}</p>
+
+                <h3>Education pathway</h3>
+                <p>{{ career.pathway }}</p>
+
+                <h3>Entrance exams and preparation</h3>
+                <p>{{ career.exams }}</p>
+
+                <h3>Possible job roles</h3>
+                <p>{{ career.roles }}</p>
+                <div class="actions" style="margin-top: 18px;">
+                    {% if user.is_authenticated %}
+                        <a
+                            class="button-link"
+                            href="{% url 'assistant' %}"
+                        >
+                            Get guidance on careers
+                        </a>
+                    {% else %}
+                        <a
+                            class="button-link"
+                            href="{% url 'login' %}"
+                        >
+                            Log in for career guidance
+                        </a>
+                    {% endif %}
+                </div>
+            </article>
+        {% empty %}
+            <p>No career information is available right now.</p>
+        {% endfor %}
+    </div>
+
+    <div class="note">
+        <strong>Important:</strong>
+        These career profiles provide general educational guidance.
+        Entrance exams, qualifications, and hiring requirements vary
+        by institution, role, and location. Verify current requirements
+        through official sources. Explore multiple careers and consult
+        a qualified counsellor when needed.
+    </div>
+
+    <a class="back-link" href="{% url 'home' %}">
+        ← Back to Home
+    </a>
+
+</main>
+
+{{ careers|json_script:"career-data" }}
+
+<script>
+    "use strict";
+
+    const careerDataElement = document.getElementById("career-data");
+    const careerData = JSON.parse(careerDataElement.textContent);
+
+    const firstSelect = document.getElementById("career1");
+    const secondSelect = document.getElementById("career2");
+    const compareButton = document.getElementById("compare-button");
+    const result = document.getElementById("comparison-result");
+
+    function compareCareers() {
+        const first = careerData.find(
+            career => career.title === firstSelect.value
+        );
+
+        const second = careerData.find(
+            career => career.title === secondSelect.value
+        );
+
+        if (!first || !second) {
+            result.textContent = "Career information is unavailable.";
+            return;
+        }
+
+        if (first.title === second.title) {
+            result.textContent =
+                "Please select two different careers to compare.";
+            return;
+        }
+
+        const rows = [
+            ["Daily work", first.daily_work, second.daily_work],
+            ["Skills", first.skills, second.skills],
+            ["Education pathway", first.pathway, second.pathway],
+            ["Entrance exams", first.exams, second.exams],
+            ["Possible job roles", first.roles, second.roles]
+        ];
+
+        const table = document.createElement("table");
+        table.className = "comparison-table";
+
+        const thead = document.createElement("thead");
+        const headerRow = document.createElement("tr");
+
+        ["Category", first.title, second.title].forEach(function (heading) {
+            const th = document.createElement("th");
+            th.textContent = heading;
+            headerRow.appendChild(th);
+        });
+
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        const tbody = document.createElement("tbody");
+
+        rows.forEach(function (row) {
+            const tr = document.createElement("tr");
+
+            row.forEach(function (value) {
+                const td = document.createElement("td");
+                td.textContent = value || "Information not available";
+                tr.appendChild(td);
+            });
+
+            tbody.appendChild(tr);
+        });
+
+        table.appendChild(tbody);
+        result.replaceChildren(table);
+    }
+
+    compareButton.addEventListener("click", compareCareers);
+</script>
+
+</body>
+</html>

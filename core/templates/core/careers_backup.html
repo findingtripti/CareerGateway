@@ -1,0 +1,136 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explore Careers | Career Gateway</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6fb;
+            color: #222;
+            margin: 0;
+            padding: 30px 16px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        h1, h2 {
+            color: #243b6b;
+        }
+
+        .intro {
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .career-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 18px;
+        }
+
+        .career-card {
+            background: white;
+            padding: 22px;
+            border-radius: 12px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
+        }
+
+        .career-card h2 {
+            margin-top: 0;
+            font-size: 21px;
+        }
+
+        .career-card p {
+            line-height: 1.5;
+        }
+
+        .label {
+            font-weight: bold;
+        }
+
+        .note {
+            margin-top: 24px;
+            padding: 14px;
+            background: #e8edf8;
+            border-radius: 8px;
+            line-height: 1.6;
+        }
+
+        a {
+            color: #243b6b;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 24px;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="container">
+        <h1>Explore Career Paths</h1>
+
+        <p class="intro">
+            Discover different career directions, understand the skills
+            they may require, and explore possible learning pathways.
+            You can compare multiple options before deciding what to pursue.
+        </p>
+
+        <div class="career-grid">
+            {% for career in careers %}
+                <article class="career-card">
+                    <h2>{{ career.title }}</h2>
+
+                    <p>{{ career.description }}</p>
+                    
+                    <p>
+                        <strong>Profile keyword matches:</strong>
+                        {{ career.match_count }}
+                    </p>
+
+                    <p>
+                        <strong>Why explore this career?</strong><br>
+                        {{ career.match_reason }}
+                    </p>
+
+
+                    <p>
+                        <span class="label">Skills to explore:</span><br>
+                        {{ career.skills }}
+                    </p>
+
+                    <p>
+                        <span class="label">Possible pathway:</span><br>
+                        {{ career.pathway }}
+                    </p>
+
+                    <p>
+                        <span class="label">Example roles:</span><br>
+                        {{ career.roles }}
+                    </p>
+                </article>
+            {% endfor %}
+        </div>
+
+        <div class="note">
+            <strong>Remember:</strong> These are starting points for
+            exploration, not personalized recommendations or guarantees
+            of employment. Education requirements and opportunities vary.
+            Consider your interests, circumstances, and goals before
+            making important decisions.
+        </div>
+
+        <a class="back-link" href="{% url 'home' %}">
+            ← Back to Home
+        </a>
+    </main>
+</body>
+</html>
