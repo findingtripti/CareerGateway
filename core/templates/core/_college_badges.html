@@ -1,0 +1,10 @@
+<div class="badges">
+    {% if college.is_verified %}
+        <span class="badge ok">Verified</span>
+    {% else %}
+        <span class="badge warn">Not verified yet</span>
+    {% endif %}
+    {% if college.is_demo %}<span class="badge demo">Demo (fictional)</span>{% endif %}
+    {% if college.is_partner %}<span class="badge partner">Partner college</span>{% endif %}
+    {% if stale %}<span class="badge warn">Information may be out of date</span>{% endif %}
+</div>

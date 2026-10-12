@@ -1,3 +1,6 @@
+from datetime import date, timedelta
+from decimal import Decimal
+
 from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.test import TestCase
@@ -5,7 +8,12 @@ from django.urls import reverse
 from django.utils.html import escape
 
 from .career_matching import find_matches, rank_careers
-from .models import Career, CareerFAQ, StudentProfile
+from .college_matching import (
+    StudentCriteria,
+    detect_education_level,
+    recommend_courses,
+)
+from .models import Career, CareerFAQ, College, Course, StudentProfile
 
 
 class PublicPageTests(TestCase):
@@ -379,7 +387,7 @@ class AssistantStartingOptionsTests(TestCase):
         self.assertContains(response, "okay")
 
     def test_unbuilt_feature_is_honest_and_never_claims_booking(self):
-        for topic in ("colleges", "scholarships", "professional"):
+        for topic in ("scholarships", "professional"):
             response = self.get_assistant(topic)
             self.assertContains(response, "not available yet")
             self.assertNotContains(response, "has been booked")
@@ -643,3 +651,336 @@ class CareerAdminTests(TestCase):
         )
         self.assertEqual(edit.status_code, 200)
         self.assertContains(edit, "Is digital forensics the same as")
+
+
+def make_college(name="Test College", location="Delhi", verified=True,
+                 partner=False, demo=False, last_verified=None,
+                 published=True):
+    return College.objects.create(
+        name=name,
+        location=location,
+        is_verified=verified,
+        is_published=published,
+        is_demo=demo,
+        last_verified=last_verified or date.today(),
+        partner_status="partner" if partner else "none",
+        partner_disclosure=(
+            "Career Gateway has a commercial relationship with this college."
+            if partner else ""
+        ),
+    )
+
+
+def make_course(college, name="B.Tech Computer Science", fees=400000,
+                min_education="class_12", careers=()):
+    course = Course.objects.create(
+        college=college, name=name, fees=fees, min_education=min_education
+    )
+    course.related_careers.set(careers)
+    return course
+
+
+def run(criteria, courses=None):
+    if courses is None:
+        courses = Course.objects.select_related("college")
+    return recommend_courses(list(courses), criteria)
+
+
+class EducationLevelDetectionTests(TestCase):
+    def test_detects_levels_from_free_text(self):
+        self.assertEqual(detect_education_level("Class 12 science"), "class_12")
+        self.assertEqual(detect_education_level("12th grade"), "class_12")
+        self.assertEqual(detect_education_level("Class 10"), "class_10")
+        self.assertEqual(detect_education_level("B.Tech first year"), "graduate")
+        self.assertEqual(detect_education_level("Bachelor of Arts"), "graduate")
+
+    def test_unknown_text_gives_none(self):
+        self.assertIsNone(detect_education_level(""))
+        self.assertIsNone(detect_education_level("studying hard"))
+
+    def test_does_not_match_inside_other_numbers(self):
+        self.assertIsNone(detect_education_level("room 120"))
+
+
+class CollegeMatchingRulesTests(TestCase):
+    def setUp(self):
+        self.college = make_college()
+
+    def test_fees_above_budget_are_excluded_with_reason(self):
+        make_course(self.college, fees=400000)
+        out = run(StudentCriteria(budget=Decimal("100000")))
+        self.assertEqual(out["results"], [])
+        self.assertIn("budget", out["excluded"][0]["reason"].lower())
+
+    def test_fees_within_budget_are_kept(self):
+        make_course(self.college, fees=400000)
+        out = run(StudentCriteria(budget=Decimal("500000")))
+        self.assertEqual(len(out["results"]), 1)
+
+    def test_unknown_fees_are_kept_but_flagged(self):
+        make_course(self.college, fees=None)
+        out = run(StudentCriteria(budget=Decimal("100000")))
+        self.assertEqual(len(out["results"]), 1)
+        self.assertTrue(
+            any("fees" in note.lower() for note in out["results"][0]["unknowns"])
+        )
+
+    def test_education_below_requirement_is_excluded(self):
+        make_course(self.college, min_education="graduate")
+        out = run(StudentCriteria(education_level="class_12"))
+        self.assertEqual(out["results"], [])
+        self.assertIn("graduate", out["excluded"][0]["reason"].lower())
+
+    def test_education_meeting_requirement_is_kept(self):
+        make_course(self.college, min_education="class_12")
+        out = run(StudentCriteria(education_level="class_12"))
+        self.assertEqual(len(out["results"]), 1)
+
+    def test_undetected_education_is_unknown_not_excluded(self):
+        make_course(self.college, min_education="class_12")
+        out = run(StudentCriteria(education_level=None))
+        self.assertEqual(len(out["results"]), 1)
+        self.assertTrue(out["results"][0]["unknowns"])
+
+    def test_location_is_a_preference_that_reorders_but_never_excludes(self):
+        far = make_college("Far College", location="Chennai")
+        near = make_college("Near College", location="Pune")
+        make_course(far)
+        make_course(near)
+        out = run(StudentCriteria(location="Pune"))
+        names = [r["college"].name for r in out["results"]]
+        self.assertEqual(names, ["Near College", "Far College"])
+
+    def test_career_interest_is_a_preference(self):
+        career = Career.objects.create(
+            title="Cybersecurity", slug="cybersecurity", summary="s",
+            what_professionals_do="a", required_education="a",
+            entrance_exams="a", important_skills="a", career_pathway="a",
+            possible_roles="a", higher_education_options="a",
+            work_environments="a", professional_insights="a",
+            keywords="security, networking",
+        )
+        plain = make_course(self.college, name="General Course")
+        linked = make_course(self.college, name="Security Course",
+                             careers=[career])
+        out = run(StudentCriteria(interest_text="I enjoy security puzzles"))
+        self.assertEqual(out["results"][0]["course"], linked)
+        self.assertEqual(len(out["results"]), 2)
+        self.assertIn(plain, [r["course"] for r in out["results"]])
+
+    def test_partner_status_never_changes_the_order(self):
+        make_college("A College", partner=False)
+        make_college("B College", partner=True)
+        for college in College.objects.all():
+            make_course(college)
+        before = [r["college"].name for r in run(StudentCriteria())["results"]]
+        College.objects.filter(name="A College").update(partner_status="partner")
+        College.objects.filter(name="B College").update(partner_status="none")
+        after = [r["college"].name for r in run(StudentCriteria())["results"]]
+        self.assertEqual(before, after)
+
+    def test_partner_college_carries_a_disclosure(self):
+        partner = make_college("Partner College", partner=True)
+        make_course(partner)
+        out = run(StudentCriteria())
+        self.assertIn("commercial relationship", out["results"][0]["partner_note"])
+
+    def test_old_verification_date_is_flagged_as_stale(self):
+        old = make_college("Old College",
+                           last_verified=date.today() - timedelta(days=800))
+        make_course(old)
+        out = run(StudentCriteria())
+        self.assertTrue(out["results"][0]["stale"])
+
+    def test_missing_verification_date_is_flagged_as_stale(self):
+        college = make_college("No Date College")
+        College.objects.filter(pk=college.pk).update(last_verified=None)
+        make_course(College.objects.get(pk=college.pk))
+        out = run(StudentCriteria())
+        self.assertTrue(out["results"][0]["stale"])
+
+    def test_every_result_explains_itself(self):
+        make_course(self.college)
+        out = run(StudentCriteria(budget=Decimal("900000"),
+                                  education_level="class_12"))
+        result = out["results"][0]
+        self.assertTrue(result["reasons"])
+        self.assertIn("fees", " ".join(result["reasons"]).lower())
+
+
+class CollegeDataModelTests(TestCase):
+    def test_new_college_defaults_are_safe(self):
+        college = College.objects.create(name="X", location="Y")
+        self.assertFalse(college.is_verified)
+        self.assertEqual(college.partner_status, "none")
+        self.assertFalse(college.is_demo)
+
+    def test_demo_seed_is_labelled_and_safe_to_repeat(self):
+        call_command("seed_careers", verbosity=0)
+        call_command("seed_demo_colleges", verbosity=0)
+        count = College.objects.count()
+        self.assertGreaterEqual(count, 4)
+        self.assertFalse(College.objects.filter(is_demo=False).exists())
+        self.assertTrue(
+            College.objects.filter(partner_status="partner").exists()
+        )
+        self.assertTrue(College.objects.filter(is_verified=False).exists())
+        call_command("seed_demo_colleges", verbosity=0)
+        self.assertEqual(College.objects.count(), count)
+
+
+class CollegePagesTests(TestCase):
+    def setUp(self):
+        self.college = make_college("Visible College", location="Pune")
+        make_course(self.college, name="Visible Course")
+        make_college("Hidden College", published=False)
+
+    def test_list_is_public_and_hides_unpublished(self):
+        response = self.client.get(reverse("colleges"))
+        self.assertContains(response, "Visible College")
+        self.assertNotContains(response, "Hidden College")
+
+    def test_list_filters_by_search_text(self):
+        make_college("Other College", location="Chennai")
+        response = self.client.get(reverse("colleges") + "?q=Chennai")
+        self.assertContains(response, "Other College")
+        self.assertNotContains(response, "Visible College")
+
+    def test_list_filters_by_maximum_fees(self):
+        cheap = make_college("Cheap College")
+        make_course(cheap, name="Cheap Course", fees=50000)
+        response = self.client.get(reverse("colleges") + "?max_fees=100000")
+        self.assertContains(response, "Cheap College")
+        self.assertNotContains(response, "Visible College")
+
+    def test_invalid_max_fees_is_ignored_not_a_crash(self):
+        response = self.client.get(reverse("colleges") + "?max_fees=abc")
+        self.assertEqual(response.status_code, 200)
+
+    def test_demo_college_shows_demo_banner(self):
+        make_college("Fictional College", demo=True)
+        response = self.client.get(reverse("colleges"))
+        self.assertContains(response, "fictional")
+
+    def test_unverified_college_is_labelled_not_verified(self):
+        make_college("Unchecked College", verified=False)
+        response = self.client.get(reverse("colleges"))
+        self.assertContains(response, "Not verified yet")
+
+    def test_detail_shows_data_quality_and_courses(self):
+        response = self.client.get(
+            reverse("college_detail", args=[self.college.pk])
+        )
+        self.assertContains(response, "Visible Course")
+        self.assertContains(response, "Last verified")
+
+    def test_partner_disclosure_is_shown_on_detail(self):
+        partner = make_college("Partner College", partner=True)
+        response = self.client.get(reverse("college_detail", args=[partner.pk]))
+        self.assertContains(response, "commercial relationship")
+
+    def test_unpublished_detail_is_404(self):
+        hidden = College.objects.get(name="Hidden College")
+        response = self.client.get(reverse("college_detail", args=[hidden.pk]))
+        self.assertEqual(response.status_code, 404)
+
+
+class CollegeRecommendPageTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            "student1", password="StrongPass#123"
+        )
+        self.profile = StudentProfile.objects.create(
+            user=self.user,
+            full_name="Asha Verma",
+            current_education="Class 12 science",
+            preferred_location="Pune",
+            budget=Decimal("500000"),
+        )
+        pune = make_college("Pune College", location="Pune")
+        chennai = make_college("Chennai College", location="Chennai")
+        make_course(pune, name="Pune Course", fees=400000)
+        make_course(chennai, name="Costly Course", fees=900000)
+        make_college("Unverified College", verified=False)
+        self.client.login(username="student1", password="StrongPass#123")
+
+    def get(self, query=""):
+        return self.client.get(reverse("college_recommend") + query)
+
+    def test_requires_login(self):
+        self.client.logout()
+        response = self.get()
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse("login"), response.url)
+
+    def test_shows_matching_college_and_excludes_with_reason(self):
+        response = self.get()
+        self.assertContains(response, "Pune Course")
+        self.assertContains(response, "Costly Course")
+        self.assertContains(response, "above your budget")
+
+    def test_unverified_colleges_are_hidden_but_counted(self):
+        response = self.get()
+        self.assertNotContains(response, "Unverified College")
+        self.assertContains(response, "not verified yet")
+
+    def test_page_never_guarantees_admission(self):
+        response = self.get()
+        self.assertContains(response, "does not guarantee admission")
+        self.assertContains(response, "career counsellor")
+
+    def test_what_if_budget_changes_results_without_saving_profile(self):
+        response = self.get("?budget=1000000")
+        self.assertContains(response, "Costly Course")
+        self.assertContains(response, "Compared with your saved profile")
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.budget, Decimal("500000"))
+
+    def test_invalid_what_if_budget_falls_back_to_profile(self):
+        response = self.get("?budget=abc")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Pune Course")
+
+    def test_page_works_without_a_profile(self):
+        StudentProfile.objects.filter(user=self.user).delete()
+        response = self.get()
+        self.assertEqual(response.status_code, 200)
+
+
+class AssistantCollegeLinksTests(TestCase):
+    def test_colleges_option_links_to_the_recommendation_page(self):
+        User.objects.create_user("student1", password="StrongPass#123")
+        self.client.login(username="student1", password="StrongPass#123")
+        response = self.client.get(reverse("assistant"))
+        self.assertContains(response, reverse("college_recommend"))
+        self.assertContains(response, reverse("colleges"))
+
+
+class CollegeAdminTests(TestCase):
+    def setUp(self):
+        User.objects.create_superuser("boss", "b@example.com", "StrongPass#123")
+        self.client.login(username="boss", password="StrongPass#123")
+
+    def test_college_admin_pages_load(self):
+        college = make_college()
+        self.assertEqual(
+            self.client.get("/admin/core/college/").status_code, 200
+        )
+        self.assertEqual(
+            self.client.get("/admin/core/college/add/").status_code, 200
+        )
+        self.assertEqual(
+            self.client.get(f"/admin/core/college/{college.pk}/change/").status_code,
+            200,
+        )
+
+    def test_mark_verified_action_sets_flag_and_date(self):
+        college = make_college(verified=False)
+        College.objects.filter(pk=college.pk).update(last_verified=None)
+        self.client.post("/admin/core/college/", {
+            "action": "mark_verified_today",
+            "_selected_action": [college.pk],
+        })
+        college.refresh_from_db()
+        self.assertTrue(college.is_verified)
+        self.assertEqual(college.last_verified, date.today())

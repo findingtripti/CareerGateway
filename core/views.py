@@ -1,5 +1,6 @@
 from decimal import Decimal, InvalidOperation
 
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
@@ -16,7 +17,13 @@ from .assistant_options import (
     WELCOME_TITLE,
 )
 from .career_matching import build_profile_text, explain_match, rank_careers
-from .models import Career, StudentProfile
+from .college_matching import (
+    StudentCriteria,
+    detect_education_level,
+    is_stale,
+    recommend_courses,
+)
+from .models import Career, College, Course, StudentProfile
 
 
 def home(request):
@@ -362,3 +369,109 @@ def career_assistant(request):
             "topic": topic,
         },
     )
+
+
+def parse_money(value):
+    """Return a Decimal from user text, or None if it is not a usable amount."""
+    try:
+        amount = Decimal((value or "").strip())
+    except InvalidOperation:
+        return None
+    if not amount.is_finite() or amount < 0 or amount > MAX_BUDGET:
+        return None
+    return amount
+
+
+def colleges_list(request):
+    """Public list of published colleges (PDF section 7)."""
+    colleges = College.objects.filter(is_published=True)
+
+    query = request.GET.get("q", "").strip()[:100]
+    if query:
+        colleges = colleges.filter(
+            Q(name__icontains=query)
+            | Q(location__icontains=query)
+            | Q(courses__name__icontains=query)
+        )
+
+    max_fees_text = request.GET.get("max_fees", "").strip()
+    max_fees = parse_money(max_fees_text) if max_fees_text else None
+    if max_fees is not None:
+        colleges = colleges.filter(courses__fees__lte=max_fees)
+
+    colleges = colleges.distinct().prefetch_related("courses")
+    items = [
+        {"college": college, "stale": is_stale(college)}
+        for college in colleges
+    ]
+
+    return render(request, "core/colleges.html", {
+        "items": items,
+        "query": query,
+        "max_fees": max_fees_text if max_fees is not None else "",
+        "has_demo": any(item["college"].is_demo for item in items),
+    })
+
+
+def college_detail(request, pk):
+    college = get_object_or_404(College, pk=pk, is_published=True)
+    return render(request, "core/college_detail.html", {
+        "college": college,
+        "courses": college.courses.prefetch_related("related_careers"),
+        "stale": is_stale(college),
+    })
+
+
+@login_required(login_url="login")
+def college_recommend(request):
+    """Explainable course and college suggestions from the verified database.
+
+    Budget and location can be changed in the URL to explore "what if"
+    without touching the saved profile.
+    """
+    profile = StudentProfile.objects.filter(user=request.user).first()
+
+    saved_budget = profile.budget if profile else None
+    saved_location = profile.preferred_location if profile else ""
+
+    what_if_budget = parse_money(request.GET.get("budget", ""))
+    what_if_location = request.GET.get("location", "").strip()[:150]
+
+    budget = what_if_budget if what_if_budget is not None else saved_budget
+    location = what_if_location or saved_location
+
+    criteria = StudentCriteria(
+        budget=budget,
+        education_level=detect_education_level(
+            profile.current_education if profile else ""
+        ),
+        location=location,
+        interest_text=build_profile_text(profile),
+    )
+
+    colleges = College.objects.filter(is_published=True, is_verified=True)
+    courses = (
+        Course.objects.filter(college__in=colleges)
+        .select_related("college")
+        .prefetch_related("related_careers")
+    )
+    outcome = recommend_courses(list(courses), criteria)
+
+    unverified_count = College.objects.filter(
+        is_published=True, is_verified=False
+    ).count()
+
+    return render(request, "core/college_recommend.html", {
+        "profile": profile,
+        "results": outcome["results"],
+        "excluded": outcome["excluded"],
+        "criteria": criteria,
+        "unverified_count": unverified_count,
+        "is_what_if": (
+            what_if_budget is not None or bool(what_if_location)
+        ) and (budget != saved_budget or location != saved_location),
+        "saved_budget": saved_budget,
+        "saved_location": saved_location,
+        "has_demo": any(r["college"].is_demo for r in outcome["results"]),
+        "education_unknown": criteria.education_level is None,
+    })

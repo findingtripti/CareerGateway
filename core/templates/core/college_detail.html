@@ -1,0 +1,74 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ college.name }} | Career Gateway{% endblock %}
+
+{% block extra_head %}{% include "core/_college_styles.html" %}{% endblock %}
+
+{% block content %}
+<p><a href="{% url 'colleges' %}">&larr; All colleges</a></p>
+<h1>{{ college.name }}</h1>
+<p class="muted">{{ college.location }}{% if college.website %} &middot; <a href="{{ college.website }}" rel="noopener noreferrer">Website</a>{% endif %}</p>
+
+{% include "core/_college_badges.html" %}
+
+{% if college.is_demo %}
+    <p class="banner">
+        This is a <strong>fictional</strong> demo college. Its details are
+        invented for demonstration.
+    </p>
+{% endif %}
+
+{% if college.is_partner %}
+    <p class="banner info">
+        {{ college.partner_disclosure|default:"Career Gateway has a commercial relationship with this college." }}
+        Partner status never changes how colleges are ordered.
+    </p>
+{% endif %}
+
+{% if college.description %}<p>{{ college.description }}</p>{% endif %}
+
+<dl class="facts">
+    <dt>Scholarships</dt>
+    <dd>{{ college.scholarships|default:"Not recorded yet." }}</dd>
+    <dt>Hostel</dt>
+    <dd>{{ college.hostel_info|default:"Not recorded yet." }}</dd>
+    <dt>Placements</dt>
+    <dd>{{ college.placement_info|default:"Not recorded yet." }}</dd>
+</dl>
+
+<h2>Courses</h2>
+{% for course in courses %}
+    <article class="item-card">
+        <h3>{{ course.name }}</h3>
+        <p class="muted">
+            {{ course.get_min_education_display }}
+            {% if course.duration %}&middot; {{ course.duration }}{% endif %}
+            &middot;
+            {% if course.fees is not None %}Fees &#8377;{{ course.fees|floatformat:"0g" }}{% else %}Fees not listed{% endif %}
+        </p>
+        {% if course.entrance_exam %}<p><strong>Entrance exam:</strong> {{ course.entrance_exam }}</p>{% endif %}
+        {% if course.eligibility %}<p><strong>Eligibility:</strong> {{ course.eligibility }}</p>{% endif %}
+        {% if course.admission_process %}<p><strong>Admission process:</strong> {{ course.admission_process }}</p>{% endif %}
+        {% with careers=course.related_careers.all %}
+            {% if careers %}
+                <p><strong>Related careers:</strong>
+                    {% for career in careers %}<a href="{% url 'career_detail' career.slug %}">{{ career.title }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}
+                </p>
+            {% endif %}
+        {% endwith %}
+    </article>
+{% empty %}
+    <p class="muted">No courses recorded yet.</p>
+{% endfor %}
+
+<div class="disclaimer">
+    <strong>Data quality.</strong>
+    Last verified:
+    {% if college.last_verified %}{{ college.last_verified|date:"j M Y" }}{% else %}not recorded{% endif %}.
+    {% if college.source_note %}Source: {{ college.source_note }}{% endif %}
+    {% if stale %}This information may be out of date. Confirm fees and dates with the college.{% endif %}
+    <br>
+    Career Gateway does not guarantee admission. A career counsellor can help
+    you decide whether this college fits you.
+</div>
+{% endblock %}

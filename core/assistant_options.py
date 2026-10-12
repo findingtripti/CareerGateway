@@ -38,20 +38,25 @@ STARTING_OPTIONS = [
         "key": "course",
         "label": "Choosing a course",
         "description": "Understand courses and what they lead to.",
-        "available": False,
+        "available": True,
+        "url_name": "college_recommend",
         "response": (
-            "Course guidance will use our verified college and course "
-            "database. " + NOT_AVAILABLE_NOTE
+            "Courses are matched from our verified college database using "
+            "your education, budget and interests. Open the course and "
+            "college suggestions to see each course with the reasons it "
+            "was shown. A career counsellor can help you compare them."
         ),
     },
     {
         "key": "colleges",
         "label": "Finding colleges",
         "description": "Find colleges from a verified database.",
-        "available": False,
+        "available": True,
+        "url_name": "college_recommend",
         "response": (
-            "College suggestions will come from our verified college "
-            "database, not from general AI knowledge. " + NOT_AVAILABLE_NOTE
+            "College suggestions come from our verified college database, "
+            "not from general AI knowledge. Open the suggestions to see why "
+            "each one was shown, or browse every listed college."
         ),
     },
     {

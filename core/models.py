@@ -3,17 +3,61 @@ from django.db import models
 
 
 class College(models.Model):
+    """College record (PDF section 7). Colleges are only recommended from
+    this verified database, never from general AI knowledge."""
+
+    PARTNER_CHOICES = [
+        ("none", "No commercial relationship"),
+        ("partner", "Partner college"),
+    ]
+
     name = models.CharField(max_length=200)
     location = models.CharField(max_length=150)
     website = models.URLField(blank=True)
     description = models.TextField(blank=True)
+    scholarships = models.TextField(
+        blank=True, help_text="Scholarships the college itself offers."
+    )
+    hostel_info = models.TextField(blank=True)
+    placement_info = models.TextField(blank=True)
+
+    # Data quality: who checked this, when, and from where.
     is_verified = models.BooleanField(default=False)
+    last_verified = models.DateField(null=True, blank=True)
+    source_note = models.TextField(blank=True)
+    is_demo = models.BooleanField(
+        default=False,
+        help_text="Fictional record used for demonstration only.",
+    )
+    is_published = models.BooleanField(default=True)
+
+    # Commercial transparency (PDF section 7): partner status never
+    # changes the order of results, but it is always disclosed.
+    partner_status = models.CharField(
+        max_length=10, choices=PARTNER_CHOICES, default="none"
+    )
+    partner_disclosure = models.TextField(blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]
 
     def __str__(self):
         return self.name
 
+    @property
+    def is_partner(self):
+        return self.partner_status == "partner"
+
+
 class Course(models.Model):
+    EDUCATION_CHOICES = [
+        ("class_10", "Class 10 completed"),
+        ("class_12", "Class 12 completed"),
+        ("graduate", "Graduate (bachelor's degree)"),
+    ]
+
     college = models.ForeignKey(
         College,
         on_delete=models.CASCADE,
@@ -22,14 +66,24 @@ class Course(models.Model):
     name = models.CharField(max_length=200)
     duration = models.CharField(max_length=100, blank=True)
     eligibility = models.TextField(blank=True)
+    min_education = models.CharField(
+        max_length=10,
+        choices=EDUCATION_CHOICES,
+        default="class_12",
+        help_text="Lowest education level needed to apply.",
+    )
     fees = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         null=True,
-        blank=True
+        blank=True,
+        help_text="Leave empty if unknown. Say in notes whether per year or total.",
     )
     entrance_exam = models.CharField(max_length=200, blank=True)
     admission_process = models.TextField(blank=True)
+    related_careers = models.ManyToManyField(
+        "Career", blank=True, related_name="courses"
+    )
 
     def __str__(self):
         return f"{self.name} - {self.college.name}"

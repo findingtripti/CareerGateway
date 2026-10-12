@@ -1,0 +1,38 @@
+<style>
+    .badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
+    .badge {
+        display: inline-block; padding: 2px 9px; border-radius: 999px;
+        font-size: 12px; background: #e5e7eb; color: #374151;
+    }
+    .badge.ok { background: #e8f6ec; color: #1c5a2b; }
+    .badge.warn { background: #fff4e0; color: #7a4b00; }
+    .badge.demo { background: #f3e8ff; color: #581c87; }
+    .badge.partner { background: #e0f2fe; color: #075985; }
+    .banner {
+        padding: 12px 14px; border-radius: 8px; margin: 0 0 16px;
+        background: #f3e8ff; border: 1px solid #d8b4fe; color: #3b0764;
+        font-size: 14px; line-height: 1.5;
+    }
+    .banner.info { background: #eef3ff; border-color: #c9d6f2; color: #1e2f55; }
+    .item-card {
+        border: 1px solid #d5dcf0; border-radius: 10px; padding: 16px;
+        margin-top: 14px; background: #fcfdff;
+    }
+    .item-card h2, .item-card h3 { margin: 0 0 4px; color: #243b6b; font-size: 19px; }
+    .item-card p { margin: 6px 0; line-height: 1.55; }
+    .muted { color: #55607a; font-size: 14px; }
+    .filter-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin: 14px 0 6px; }
+    .filter-form .form-field { margin-bottom: 0; flex: 1 1 200px; }
+    .filter-form input { width: 100%; padding: 10px 12px; border: 1px solid #b9c3d9; border-radius: 6px; font-size: 16px; }
+    .filter-form label { display: block; font-weight: bold; font-size: 14px; color: #243b6b; margin-bottom: 6px; }
+    .reasons { margin: 6px 0 6px 18px; padding: 0; }
+    .reasons li { margin: 3px 0; line-height: 1.5; }
+    .unknowns li { color: #7a4b00; }
+    .disclaimer {
+        margin-top: 24px; padding: 14px 16px; background: #f7f8fc;
+        border: 1px solid #d5dcf0; border-radius: 8px; font-size: 14px; line-height: 1.6;
+    }
+    dl.facts dt { font-weight: bold; margin-top: 14px; color: #243b6b; }
+    dl.facts dd { margin: 4px 0 0; line-height: 1.55; }
+    @media (max-width: 650px) { .filter-form .form-field { flex-basis: 100%; } }
+</style>

@@ -22,4 +22,5 @@ Thumbs.db
 # IDE settings
 .vscode/
 .idea/
-!.env.example
+!.env.exampledb_before_migration_backup.sqlite3
+*.sqlite3

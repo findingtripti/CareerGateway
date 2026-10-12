@@ -1,0 +1,128 @@
+{% extends "core/base.html" %}
+
+{% block title %}Course and college suggestions | Career Gateway{% endblock %}
+
+{% block extra_head %}{% include "core/_college_styles.html" %}{% endblock %}
+
+{% block content %}
+<h1>Course and college suggestions</h1>
+
+<p>
+    These suggestions come from our college database using simple rules you
+    can see. Budget and education level can remove a course. Location and
+    career interests only change the order.
+</p>
+
+{% if has_demo %}
+    <p class="banner">
+        Some results are <strong>fictional</strong> demo colleges. Do not use
+        them to make real decisions.
+    </p>
+{% endif %}
+
+{% if not profile %}
+    <p class="banner info">
+        You have no saved profile yet, so nothing could be checked against
+        your education, budget or location.
+        <a href="{% url 'profile' %}">Add your details</a>.
+    </p>
+{% else %}
+    <p class="muted">
+        Using:
+        education {{ profile.current_education|default:"not set" }},
+        budget {% if criteria.budget is not None %}&#8377;{{ criteria.budget|floatformat:"0g" }}{% else %}not set{% endif %},
+        location {{ criteria.location|default:"not set" }}.
+        <a href="{% url 'profile' %}">Update profile</a>
+    </p>
+{% endif %}
+
+{% if education_unknown %}
+    <p class="banner info">
+        We could not tell your education level from your profile, so course
+        eligibility was not checked.
+    </p>
+{% endif %}
+
+<form method="get" class="filter-form">
+    <div class="form-field">
+        <label for="budget">What if my budget were (&#8377;)</label>
+        <input id="budget" name="budget" type="number" min="0" step="1">
+    </div>
+    <div class="form-field">
+        <label for="location">What if my location were</label>
+        <input id="location" name="location" type="text" maxlength="150">
+    </div>
+    <button class="button" type="submit">Try it</button>
+</form>
+<p class="form-hint">This only changes what you see here. Your saved profile is not changed.</p>
+
+{% if is_what_if %}
+    <p class="banner info">
+        Compared with your saved profile
+        (budget {% if saved_budget is not None %}&#8377;{{ saved_budget|floatformat:"0g" }}{% else %}not set{% endif %},
+        location {{ saved_location|default:"not set" }}),
+        you are now looking at
+        budget {% if criteria.budget is not None %}&#8377;{{ criteria.budget|floatformat:"0g" }}{% else %}not set{% endif %},
+        location {{ criteria.location|default:"not set" }}.
+    </p>
+{% endif %}
+
+<h2>Courses worth looking at</h2>
+{% for result in results %}
+    <article class="item-card">
+        <h3>{{ result.course.name }}</h3>
+        <p class="muted">
+            <a href="{% url 'college_detail' result.college.pk %}">{{ result.college.name }}</a>,
+            {{ result.college.location }}
+        </p>
+        <div class="badges">
+            <span class="badge ok">Verified</span>
+            {% if result.college.is_demo %}<span class="badge demo">Demo (fictional)</span>{% endif %}
+            {% if result.stale %}<span class="badge warn">Information may be out of date</span>{% endif %}
+        </div>
+        <p><strong>Why it is shown</strong></p>
+        <ul class="reasons">
+            {% for reason in result.reasons %}<li>{{ reason }}</li>{% endfor %}
+        </ul>
+        {% if result.unknowns %}
+            <p><strong>Not known yet</strong></p>
+            <ul class="reasons unknowns">
+                {% for note in result.unknowns %}<li>{{ note }}</li>{% endfor %}
+            </ul>
+        {% endif %}
+        {% if result.partner_note %}
+            <p class="banner info">{{ result.partner_note }} It did not affect this order.</p>
+        {% endif %}
+    </article>
+{% empty %}
+    <p class="banner info">
+        No course matches your current details. Look at the reasons below, or
+        try a different budget above.
+    </p>
+{% endfor %}
+
+{% if excluded %}
+    <h2>Not shown as a match</h2>
+    <p class="muted">These courses were removed because of a hard rule. We show them so you can see why.</p>
+    {% for item in excluded %}
+        <article class="item-card">
+            <h3>{{ item.course.name }}</h3>
+            <p class="muted">{{ item.college.name }}, {{ item.college.location }}</p>
+            <p>{{ item.reason }}</p>
+        </article>
+    {% endfor %}
+{% endif %}
+
+{% if unverified_count %}
+    <p class="banner info">
+        {{ unverified_count }} college{{ unverified_count|pluralize }} in our
+        database {{ unverified_count|pluralize:"is,are" }} not verified yet and
+        {{ unverified_count|pluralize:"is,are" }} not included in these suggestions.
+    </p>
+{% endif %}
+
+<div class="disclaimer">
+    These suggestions help you explore. Career Gateway does not guarantee admission to any college, and fees and dates can change. A career counsellor can help you compare these options and choose.
+    <a href="{% url 'colleges' %}">Browse all colleges</a>
+</div>
+{% endblock %}

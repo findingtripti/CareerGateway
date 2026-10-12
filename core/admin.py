@@ -1,3 +1,5 @@
+from datetime import date
+
 
 from django.contrib import admin
 from .models import (
@@ -10,17 +12,62 @@ from .models import (
 )
 
 
+class CourseInline(admin.StackedInline):
+    model = Course
+    extra = 0
+    filter_horizontal = ("related_careers",)
+
+
 @admin.register(College)
 class CollegeAdmin(admin.ModelAdmin):
-    list_display = ("name", "location", "is_verified", "created_at")
+    list_display = (
+        "name",
+        "location",
+        "is_verified",
+        "last_verified",
+        "partner_status",
+        "is_demo",
+        "is_published",
+    )
     search_fields = ("name", "location")
-    list_filter = ("is_verified", "location")
+    list_filter = (
+        "is_verified", "partner_status", "is_demo", "is_published", "location",
+    )
+    inlines = [CourseInline]
+    actions = ["mark_verified_today"]
+    fieldsets = (
+        (None, {"fields": ("name", "location", "website", "description",
+                           "is_published")}),
+        ("College details (PDF section 7)", {"fields": (
+            "scholarships", "hostel_info", "placement_info",
+        )}),
+        ("Data quality", {"fields": (
+            "is_verified", "last_verified", "source_note", "is_demo",
+        )}),
+        ("Commercial transparency", {
+            "fields": ("partner_status", "partner_disclosure"),
+            "description": (
+                "Partner status is always shown to students. It never "
+                "changes the order of recommendations."
+            ),
+        }),
+    )
+
+    @admin.action(description="Mark selected colleges as verified today")
+    def mark_verified_today(self, request, queryset):
+        updated = queryset.update(
+            is_verified=True, last_verified=date.today()
+        )
+        self.message_user(request, f"{updated} college(s) marked as verified.")
+
 
 @admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):
-    list_display = ("name", "college", "duration", "fees")
+    list_display = ("name", "college", "min_education", "duration", "fees")
     search_fields = ("name", "college__name")
-    list_filter = ("college",)
+    list_filter = ("min_education", "college")
+    filter_horizontal = ("related_careers",)
+
 
 @admin.register(Opportunity)
 class OpportunityAdmin(admin.ModelAdmin):

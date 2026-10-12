@@ -1,0 +1,61 @@
+{% extends "core/base.html" %}
+
+{% block title %}Colleges | Career Gateway{% endblock %}
+
+{% block extra_head %}{% include "core/_college_styles.html" %}{% endblock %}
+
+{% block content %}
+<h1>Colleges</h1>
+
+<p>
+    Colleges and courses listed here come from the Career Gateway database.
+    Each record shows whether it has been verified and when.
+</p>
+
+{% if has_demo %}
+    <p class="banner">
+        Some colleges on this page are <strong>fictional</strong> demo records
+        used to try out the product. Do not use them to make real decisions.
+    </p>
+{% endif %}
+
+<p>
+    {% if user.is_authenticated %}
+        <a href="{% url 'college_recommend' %}">See course and college suggestions for my profile &rarr;</a>
+    {% else %}
+        <a href="{% url 'login' %}?next={% url 'college_recommend' %}">Log in to see suggestions for your profile &rarr;</a>
+    {% endif %}
+</p>
+
+<form method="get" class="filter-form" role="search">
+    <div class="form-field">
+        <label for="q">Search by college, city or course</label>
+        <input id="q" name="q" type="text" value="{{ query }}" maxlength="100">
+    </div>
+    <div class="form-field">
+        <label for="max_fees">Maximum course fees (&#8377;)</label>
+        <input id="max_fees" name="max_fees" type="number" min="0" step="1" value="{{ max_fees }}">
+    </div>
+    <button class="button" type="submit">Filter</button>
+</form>
+
+{% for item in items %}
+    {% with college=item.college stale=item.stale %}
+    <article class="item-card">
+        <h2><a href="{% url 'college_detail' college.pk %}">{{ college.name }}</a></h2>
+        <p class="muted">{{ college.location }} &middot; {{ college.courses.all|length }} course{{ college.courses.all|length|pluralize }}</p>
+        {% include "core/_college_badges.html" %}
+        <p class="muted">
+            Last verified:
+            {% if college.last_verified %}{{ college.last_verified|date:"j M Y" }}{% else %}not recorded{% endif %}
+        </p>
+    </article>
+    {% endwith %}
+{% empty %}
+    <p class="banner info">No colleges match. Try removing a filter.</p>
+{% endfor %}
+
+<p class="disclaimer">
+    Career Gateway does not guarantee admission to any college. A career counsellor can help you compare options in more detail.
+</p>
+{% endblock %}
