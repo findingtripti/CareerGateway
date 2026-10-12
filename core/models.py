@@ -274,3 +274,98 @@ class CareerFAQ(models.Model):
 
     def __str__(self):
         return self.question
+
+
+class Lead(models.Model):
+    """One student enquiry or request that the team follows up (PDF
+    sections 8 and 14). Together these records form the lead journey shown
+    in the admin dashboard. Nothing here books a session or takes payment."""
+
+    LEAD_TYPES = [
+        ("student_enquiry", "Student enquiry"),
+        ("career_enquiry", "Career enquiry"),
+        ("college_enquiry", "College enquiry"),
+        ("counselling_request", "Counselling request"),
+        ("mentor_request", "Mentor request"),
+        ("admission_lead", "Admission lead"),
+    ]
+    STAGES = [
+        ("new", "New"),
+        ("contacted", "Contacted"),
+        ("qualified", "Qualified"),
+        ("counsellor_assigned", "Counsellor assigned"),
+        ("shortlisted", "College shortlist shared"),
+        ("application_pending", "Application pending"),
+        ("closed", "Closed"),
+    ]
+    APPLICATION_STATUS = [
+        ("", "Not started"),
+        ("pending", "Application pending"),
+        ("submitted", "Application submitted"),
+    ]
+    # PDF section 15 revenue tiers. Labels only: no payment exists here.
+    TIERS = [
+        ("free", "Free"),
+        ("lead", "Lead"),
+        ("paid", "Paid"),
+        ("admission", "Admission"),
+        ("long_term", "Long-term"),
+    ]
+    DEFAULT_TIER_BY_TYPE = {
+        "student_enquiry": "free",
+        "career_enquiry": "free",
+        "college_enquiry": "lead",
+        "counselling_request": "paid",
+        "mentor_request": "paid",
+        "admission_lead": "admission",
+    }
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="leads",
+    )
+    name = models.CharField(max_length=150, blank=True)
+    contact_email = models.EmailField(blank=True)
+    contact_phone = models.CharField(max_length=20, blank=True)
+    lead_type = models.CharField(max_length=20, choices=LEAD_TYPES)
+    trigger = models.CharField(
+        max_length=30, blank=True,
+        help_text="Which PDF section 8 situation prompted the request.",
+    )
+    message = models.TextField(blank=True)
+    related_college = models.ForeignKey(
+        College, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="leads",
+    )
+    related_career = models.ForeignKey(
+        Career, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="leads",
+    )
+    shortlist = models.ManyToManyField(
+        College, blank=True, related_name="shortlisted_in",
+    )
+    stage = models.CharField(max_length=20, choices=STAGES, default="new")
+    tier = models.CharField(max_length=10, choices=TIERS, blank=True)
+    assigned_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="assigned_leads",
+        limit_choices_to={"is_staff": True},
+    )
+    application_status = models.CharField(
+        max_length=12, choices=APPLICATION_STATUS, blank=True
+    )
+    internal_notes = models.TextField(blank=True)
+    consent_given = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def save(self, *args, **kwargs):
+        if not self.tier:
+            self.tier = self.DEFAULT_TIER_BY_TYPE.get(self.lead_type, "free")
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.get_lead_type_display()} - {self.name or self.user or 'unknown'}"

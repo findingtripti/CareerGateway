@@ -1,6 +1,6 @@
 
 from django.urls import path
-from . import views
+from . import views, views_leads
 
 urlpatterns = [
     path("", views.home, name="home"),
@@ -11,6 +11,12 @@ urlpatterns = [
     path("careers/", views.career_exploration, name="careers"),
     path("careers/<slug:slug>/", views.career_detail, name="career_detail"),
     path("assistant/", views.career_assistant, name="assistant"),
+    path("counsellor/request/", views_leads.counsellor_request, name="counsellor_request"),
+    path("requests/", views_leads.my_requests, name="my_requests"),
+    path("requests/<int:pk>/thanks/", views_leads.lead_thanks, name="lead_thanks"),
+    path("colleges/<int:pk>/enquire/", views_leads.college_enquiry, name="college_enquiry"),
+    path("careers/<slug:slug>/enquire/", views_leads.career_enquiry, name="career_enquiry"),
+    path("staff/leads/", views_leads.lead_dashboard, name="lead_dashboard"),
     path("opportunities/", views.opportunities_list, name="opportunities"),
     path("opportunities/for-me/", views.opportunity_recommend, name="opportunity_recommend"),
     path("opportunities/<int:pk>/", views.opportunity_detail, name="opportunity_detail"),

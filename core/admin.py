@@ -7,6 +7,7 @@ from .models import (
     CareerFAQ,
     College,
     Course,
+    Lead,
     Opportunity,
     StudentProfile,
 )
@@ -158,3 +159,43 @@ class CareerAdmin(admin.ModelAdmin):
             "last_reviewed",
         )}),
     )
+
+
+@admin.register(Lead)
+class LeadAdmin(admin.ModelAdmin):
+    list_display = (
+        "__str__", "lead_type", "stage", "tier", "assigned_to",
+        "application_status", "created_at",
+    )
+    list_filter = ("lead_type", "stage", "tier", "application_status", "assigned_to")
+    search_fields = ("name", "contact_email", "contact_phone", "message")
+    filter_horizontal = ("shortlist",)
+    readonly_fields = ("created_at", "updated_at", "consent_given", "user")
+    actions = ["mark_contacted", "mark_qualified", "assign_to_me"]
+    fieldsets = (
+        ("Student", {"fields": ("user", "name", "contact_email", "contact_phone",
+                                "consent_given")}),
+        ("Request", {"fields": ("lead_type", "trigger", "message",
+                                "related_college", "related_career")}),
+        ("Journey (PDF section 14)", {"fields": (
+            "stage", "assigned_to", "shortlist", "application_status",
+            "internal_notes",
+        )}),
+        ("Revenue tier (label only, no payment)", {"fields": ("tier",)}),
+        ("Dates", {"fields": ("created_at", "updated_at")}),
+    )
+
+    @admin.action(description="Mark selected as contacted")
+    def mark_contacted(self, request, queryset):
+        n = queryset.filter(stage="new").update(stage="contacted")
+        self.message_user(request, f"{n} lead(s) marked as contacted.")
+
+    @admin.action(description="Mark selected as qualified")
+    def mark_qualified(self, request, queryset):
+        n = queryset.filter(stage__in=["new", "contacted"]).update(stage="qualified")
+        self.message_user(request, f"{n} lead(s) marked as qualified.")
+
+    @admin.action(description="Assign selected to me")
+    def assign_to_me(self, request, queryset):
+        n = queryset.update(assigned_to=request.user, stage="counsellor_assigned")
+        self.message_user(request, f"{n} lead(s) assigned to you.")

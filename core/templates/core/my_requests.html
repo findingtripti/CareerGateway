@@ -1,0 +1,28 @@
+{% extends "core/base.html" %}
+
+{% block title %}My requests | Career Gateway{% endblock %}
+
+{% block extra_head %}{% include "core/_college_styles.html" %}{% endblock %}
+
+{% block content %}
+<h1>My requests</h1>
+<p>Only you and the Career Gateway team can see these.</p>
+
+{% for lead in leads %}
+    <article class="item-card">
+        <h2>{{ lead.get_lead_type_display }} #{{ lead.pk }}</h2>
+        <div class="badges">
+            <span class="badge">{{ lead.get_stage_display }}</span>
+            {% if lead.assigned_to %}<span class="badge ok">Counsellor assigned</span>{% else %}<span class="badge">No counsellor assigned yet</span>{% endif %}
+        </div>
+        <p class="muted">Sent {{ lead.created_at|date:"j M Y" }}
+            {% if lead.related_college %}&middot; about {{ lead.related_college.name }}{% endif %}
+            {% if lead.related_career %}&middot; about {{ lead.related_career.title }}{% endif %}
+        </p>
+        {% if lead.message %}<p>{{ lead.message }}</p>{% endif %}
+    </article>
+{% empty %}
+    <p class="banner info">You have not sent any requests yet.
+        <a href="{% url 'counsellor_request' %}">Request a counsellor</a></p>
+{% endfor %}
+{% endblock %}

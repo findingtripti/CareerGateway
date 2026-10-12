@@ -1,0 +1,21 @@
+{% extends "core/base.html" %}
+
+{% block title %}Ask a question | Career Gateway{% endblock %}
+
+{% block extra_head %}{% include "core/_college_styles.html" %}{% endblock %}
+
+{% block content %}
+<p><a href="{{ back_url }}">&larr; Back</a></p>
+<h1>Ask about {{ subject }}</h1>
+
+<p class="banner info">
+    Your question is saved for the Career Gateway team. Nothing is booked and
+    no payment is taken. We will use the contact details below to reply.
+</p>
+
+<form method="post">
+    {% csrf_token %}
+    {% include "core/_lead_form_fields.html" %}
+    <button class="button" type="submit">Send question</button>
+</form>
+{% endblock %}

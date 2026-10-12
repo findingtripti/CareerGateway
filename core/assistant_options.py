@@ -75,20 +75,25 @@ STARTING_OPTIONS = [
         "key": "professional",
         "label": "Talk to a professional",
         "description": "Get help from a counsellor or a mentor.",
-        "available": False,
+        "available": True,
+        "url_name": "counsellor_request",
         "response": (
-            COUNSELLOR_HANDOFF_TEXT + " Counsellor requests are not "
-            "available yet, so nothing has been requested for you."
+            COUNSELLOR_HANDOFF_TEXT + " You can send a counselling request "
+            "to our team. Please note that nothing has been requested until "
+            "you submit the form, and no counsellor is assigned until the "
+            "team reviews your request."
         ),
     },
     {
         "key": "roadmap",
         "label": "Build my career roadmap",
         "description": "Turn a career choice into practical next steps.",
-        "available": False,
+        "available": True,
+        "url_name": "counsellor_request",
         "response": (
             "A personal roadmap works best together with a counsellor. "
-            + COUNSELLOR_HANDOFF_TEXT + " Roadmaps are not available yet."
+            + COUNSELLOR_HANDOFF_TEXT + " You can ask for one through a "
+            "counselling request. Nothing is sent until you submit the form."
         ),
     },
     {

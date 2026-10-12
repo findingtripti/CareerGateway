@@ -1,0 +1,38 @@
+{% extends "core/base.html" %}
+
+{% block title %}Request a counsellor | Career Gateway{% endblock %}
+
+{% block extra_head %}{% include "core/_college_styles.html" %}{% endblock %}
+
+{% block content %}
+<h1>Request a career counsellor</h1>
+
+<p>{{ suggested_message }}</p>
+
+<p class="banner info">
+    <strong>What happens next.</strong> Your request is saved for the
+    Career Gateway team to review. No counsellor has been assigned yet, no
+    session is booked. No payment is taken on this page.
+</p>
+
+<form method="post">
+    {% csrf_token %}
+    <div class="form-field">
+        <label for="trigger">What prompted this request? (optional)</label>
+        <select id="trigger" name="trigger" style="width:100%;padding:11px 12px;border:1px solid #b9c3d9;border-radius:6px;font-size:16px;">
+            <option value="">Choose one</option>
+            {% for value, label in trigger_choices %}
+                <option value="{{ value }}" {% if value == values.trigger %}selected{% endif %}>{{ label|capfirst }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% include "core/_lead_form_fields.html" %}
+    <button class="button" type="submit">Send request</button>
+</form>
+
+<p class="disclaimer">
+    The assistant does not replace a professional career counsellor. We use
+    your contact details only to respond to this request.
+    <a href="{% url 'my_requests' %}">See my requests</a>
+</p>
+{% endblock %}

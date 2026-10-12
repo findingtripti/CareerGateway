@@ -61,6 +61,10 @@
     <p class="muted">No courses recorded yet.</p>
 {% endfor %}
 
+<p>
+    <a class="button" href="{% url 'college_enquiry' college.pk %}">Ask about this college</a>
+</p>
+
 <div class="disclaimer">
     <strong>Data quality.</strong>
     Last verified:

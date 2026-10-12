@@ -1,0 +1,19 @@
+<div class="form-field">
+    <label for="contact_email">Email address</label>
+    <input id="contact_email" name="contact_email" type="email" autocomplete="email" value="{{ values.contact_email }}" maxlength="254">
+</div>
+<div class="form-field">
+    <label for="contact_phone">Phone number (optional if you gave an email)</label>
+    <input id="contact_phone" name="contact_phone" type="tel" autocomplete="tel" value="{{ values.contact_phone }}" maxlength="20">
+</div>
+<div class="form-field">
+    <label for="message">What would you like help with?</label>
+    <textarea id="message" name="message" rows="5" maxlength="2000" style="width:100%;padding:11px 12px;border:1px solid #b9c3d9;border-radius:6px;font-size:16px;font-family:inherit;">{{ values.message }}</textarea>
+</div>
+<div class="form-field">
+    <label style="font-weight:normal;display:flex;gap:10px;align-items:flex-start;">
+        <input name="consent" type="checkbox" value="1" style="width:auto;margin-top:4px;">
+        <span>I agree that the Career Gateway team may contact me about this
+        request using the details above.</span>
+    </label>
+</div>

@@ -23,6 +23,7 @@ from .college_matching import (
     is_stale,
     recommend_courses,
 )
+from .handoff import detect_triggers, triggers_for_options
 from .models import Career, College, Course, Opportunity, StudentProfile
 from .opportunity_matching import (
     deadline_status,
@@ -285,6 +286,7 @@ def career_assistant(request):
     less_coding = False
     recommendations = []
     excluded_titles = []
+    handoff = []
 
     # Only known option keys are accepted; anything else is ignored.
     topic = request.GET.get("topic", "")
@@ -326,6 +328,15 @@ def career_assistant(request):
 
         excluded_titles = [career.title for career in excluded]
 
+        # PDF section 8: suggest a human counsellor, never claim one exists.
+        seen = set()
+        for trigger in (
+            triggers_for_options(len(recommendations)) + detect_triggers(interest)
+        ):
+            if trigger["key"] not in seen:
+                seen.add(trigger["key"])
+                handoff.append(trigger)
+
         assistant_message = (
             "Based on the information available, here are some "
             "career paths worth exploring. Compare their daily work, "
@@ -366,6 +377,7 @@ def career_assistant(request):
             "student_answer": student_answer,
             "recommendations": recommendations,
             "excluded_titles": excluded_titles,
+            "handoff": handoff,
             "assistant_message": assistant_message,
             "priority_labels": PRIORITY_LABELS,
             "welcome_title": WELCOME_TITLE,

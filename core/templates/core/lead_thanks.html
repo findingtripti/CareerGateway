@@ -1,0 +1,22 @@
+{% extends "core/base.html" %}
+
+{% block title %}Request received | Career Gateway{% endblock %}
+
+{% block extra_head %}{% include "core/_college_styles.html" %}{% endblock %}
+
+{% block content %}
+<h1>We have your request</h1>
+<p>Reference number: <strong>#{{ lead.pk }}</strong> ({{ lead.get_lead_type_display }}).</p>
+
+<p class="banner info">
+    The team will review it. No counsellor has been assigned yet and nothing has been booked or charged.
+    We will use
+    {% if lead.contact_email %}{{ lead.contact_email }}{% endif %}{% if lead.contact_email and lead.contact_phone %} or {% endif %}{% if lead.contact_phone %}{{ lead.contact_phone }}{% endif %}
+    to reach you.
+</p>
+
+<p>
+    <a class="button" href="{% url 'my_requests' %}">See my requests</a>
+    <a href="{% url 'assistant' %}">Back to the assistant</a>
+</p>
+{% endblock %}

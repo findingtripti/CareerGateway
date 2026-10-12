@@ -13,7 +13,10 @@ from .college_matching import (
     detect_education_level,
     recommend_courses,
 )
+from .assistant_options import OPTIONS_BY_KEY
+from .handoff import SUGGESTED_MESSAGE, detect_triggers, triggers_for_options
 from .models import (
+    Lead,
     Career,
     CareerFAQ,
     College,
@@ -394,10 +397,9 @@ class AssistantStartingOptionsTests(TestCase):
         self.assertEqual(response.context["priority"], "exploration")
         self.assertContains(response, "okay")
 
-    def test_unbuilt_feature_is_honest_and_never_claims_booking(self):
-        for topic in ("professional",):
+    def test_no_topic_ever_claims_a_booking_or_assignment(self):
+        for topic in OPTIONS_BY_KEY:
             response = self.get_assistant(topic)
-            self.assertContains(response, "not available yet")
             self.assertNotContains(response, "has been booked")
             self.assertNotContains(response, "assigned to you")
 
@@ -1176,3 +1178,267 @@ class AssistantOpportunityLinkTests(TestCase):
         r = self.client.get(reverse("assistant"))
         self.assertContains(r, reverse("opportunity_recommend"))
         self.assertContains(r, reverse("opportunities"))
+
+
+class HandoffTriggerTests(TestCase):
+    """PDF section 8: the seven situations that call for a human counsellor."""
+
+    def keys(self, text):
+        return [t["key"] for t in detect_triggers(text)]
+
+    def test_seven_triggers_are_detected(self):
+        cases = {
+            "confused": "I am confused between engineering and design",
+            "personalised": "I want personalised guidance",
+            "important_decision": "This is an important decision for me",
+            "detailed_counselling": "My parents want detailed counselling",
+            "college_comparison": "Please compare colleges for me",
+            "admission_help": "I need help with admission",
+            "professional_judgement": "Should I take a gap year?",
+        }
+        for key, text in cases.items():
+            self.assertIn(key, self.keys(text), text)
+
+    def test_plain_text_has_no_trigger(self):
+        self.assertEqual(self.keys("I like drawing"), [])
+        self.assertEqual(self.keys(""), [])
+
+    def test_several_options_trigger_uses_pdf_message(self):
+        self.assertEqual(triggers_for_options(3)[0]["key"], "confused")
+        self.assertEqual(triggers_for_options(1), [])
+        self.assertIn(
+            "A career counsellor can help you evaluate them in more detail.",
+            SUGGESTED_MESSAGE,
+        )
+
+    def test_whole_word_matching(self):
+        self.assertEqual(self.keys("the apparent parentage"), [])
+
+
+class CounsellorRequestTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("student1", password="StrongPass#123")
+        StudentProfile.objects.create(user=self.user, full_name="Asha Verma")
+        self.client.login(username="student1", password="StrongPass#123")
+        self.url = reverse("counsellor_request")
+        self.good = {
+            "contact_email": "asha@example.com",
+            "contact_phone": "",
+            "message": "Please help me choose.",
+            "trigger": "confused",
+            "consent": "1",
+        }
+
+    def test_requires_login(self):
+        self.client.logout()
+        self.assertEqual(self.client.get(self.url).status_code, 302)
+
+    def test_form_is_honest_and_asks_consent(self):
+        r = self.client.get(self.url)
+        self.assertContains(r, "No counsellor has been assigned")
+        self.assertContains(r, 'name="consent"')
+        self.assertContains(r, "No payment is taken")
+
+    def test_valid_request_creates_a_lead(self):
+        r = self.client.post(self.url, self.good)
+        lead = Lead.objects.get()
+        self.assertRedirects(r, reverse("lead_thanks", args=[lead.pk]))
+        self.assertEqual(lead.lead_type, "counselling_request")
+        self.assertEqual(lead.stage, "new")
+        self.assertEqual(lead.user, self.user)
+        self.assertEqual(lead.trigger, "confused")
+        self.assertEqual(lead.name, "Asha Verma")
+        self.assertTrue(lead.consent_given)
+        self.assertIsNone(lead.assigned_to)
+
+    def test_missing_consent_saves_nothing(self):
+        data = dict(self.good); data.pop("consent")
+        r = self.client.post(self.url, data)
+        self.assertEqual(Lead.objects.count(), 0)
+        self.assertContains(r, "consent")
+
+    def test_needs_email_or_phone(self):
+        data = dict(self.good, contact_email="", contact_phone="")
+        self.client.post(self.url, data)
+        self.assertEqual(Lead.objects.count(), 0)
+
+    def test_bad_email_rejected(self):
+        self.client.post(self.url, dict(self.good, contact_email="not-an-email"))
+        self.assertEqual(Lead.objects.count(), 0)
+
+    def test_phone_only_is_accepted(self):
+        self.client.post(self.url, dict(self.good, contact_email="", contact_phone="+91 98765 43210"))
+        self.assertEqual(Lead.objects.count(), 1)
+
+    def test_bad_phone_rejected(self):
+        self.client.post(self.url, dict(self.good, contact_email="", contact_phone="abc"))
+        self.assertEqual(Lead.objects.count(), 0)
+
+    def test_unknown_trigger_is_ignored(self):
+        self.client.post(self.url, dict(self.good, trigger="<script>"))
+        self.assertEqual(Lead.objects.get().trigger, "")
+
+    def test_message_length_is_capped(self):
+        self.client.post(self.url, dict(self.good, message="x" * 5000))
+        self.assertLessEqual(len(Lead.objects.get().message), 2000)
+
+    def test_thanks_page_never_claims_booking(self):
+        self.client.post(self.url, self.good)
+        lead = Lead.objects.get()
+        r = self.client.get(reverse("lead_thanks", args=[lead.pk]))
+        self.assertContains(r, "nothing has been booked")
+        self.assertNotContains(r, "has been assigned to you")
+
+    def test_thanks_page_is_private(self):
+        self.client.post(self.url, self.good)
+        lead = Lead.objects.get()
+        User.objects.create_user("other", password="StrongPass#123")
+        self.client.login(username="other", password="StrongPass#123")
+        r = self.client.get(reverse("lead_thanks", args=[lead.pk]))
+        self.assertEqual(r.status_code, 404)
+
+    def test_my_requests_shows_only_own(self):
+        mine = Lead.objects.create(user=self.user, lead_type="counselling_request", message="mine-msg", consent_given=True)
+        other = User.objects.create_user("other", password="StrongPass#123")
+        Lead.objects.create(user=other, lead_type="counselling_request", message="secret-msg", consent_given=True)
+        r = self.client.get(reverse("my_requests"))
+        self.assertContains(r, "mine-msg")
+        self.assertNotContains(r, "secret-msg")
+
+
+class EnquiryTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("student1", password="StrongPass#123")
+        self.client.login(username="student1", password="StrongPass#123")
+        self.college = make_college("Visible College")
+        self.career = Career.objects.create(
+            title="Cybersecurity", slug="cybersecurity", summary="s",
+            what_professionals_do="a", required_education="a",
+            entrance_exams="a", important_skills="a", career_pathway="a",
+            possible_roles="a", higher_education_options="a",
+            work_environments="a", professional_insights="a")
+        self.data = {"contact_email": "a@example.com", "message": "Tell me more", "consent": "1"}
+
+    def test_college_enquiry_creates_lead(self):
+        url = reverse("college_enquiry", args=[self.college.pk])
+        r = self.client.post(url, self.data)
+        lead = Lead.objects.get()
+        self.assertEqual(lead.lead_type, "college_enquiry")
+        self.assertEqual(lead.related_college, self.college)
+        self.assertRedirects(r, reverse("lead_thanks", args=[lead.pk]))
+
+    def test_unpublished_college_enquiry_is_404(self):
+        hidden = make_college("Hidden", published=False)
+        r = self.client.post(reverse("college_enquiry", args=[hidden.pk]), self.data)
+        self.assertEqual(r.status_code, 404)
+
+    def test_career_enquiry_creates_lead(self):
+        self.client.post(reverse("career_enquiry", args=[self.career.slug]), self.data)
+        lead = Lead.objects.get()
+        self.assertEqual(lead.lead_type, "career_enquiry")
+        self.assertEqual(lead.related_career, self.career)
+
+    def test_enquiry_requires_consent(self):
+        data = dict(self.data); data.pop("consent")
+        self.client.post(reverse("college_enquiry", args=[self.college.pk]), data)
+        self.assertEqual(Lead.objects.count(), 0)
+
+    def test_enquiry_requires_login(self):
+        self.client.logout()
+        r = self.client.get(reverse("college_enquiry", args=[self.college.pk]))
+        self.assertEqual(r.status_code, 302)
+
+    def test_detail_pages_link_to_enquiry(self):
+        r = self.client.get(reverse("college_detail", args=[self.college.pk]))
+        self.assertContains(r, reverse("college_enquiry", args=[self.college.pk]))
+        r = self.client.get(reverse("career_detail", args=[self.career.slug]))
+        self.assertContains(r, reverse("career_enquiry", args=[self.career.slug]))
+
+
+class AssistantHandoffTests(TestCase):
+    def setUp(self):
+        User.objects.create_user("student1", password="StrongPass#123")
+        self.client.login(username="student1", password="StrongPass#123")
+        call_command("seed_careers", verbosity=0)
+
+    def test_professional_option_links_to_request(self):
+        r = self.client.get(reverse("assistant") + "?topic=professional")
+        self.assertContains(r, reverse("counsellor_request"))
+        self.assertContains(r, "nothing has been requested until you submit")
+
+    def test_several_recommendations_show_suggested_message(self):
+        r = self.client.post(reverse("assistant"), {
+            "interest": "I like coding and design", "priority": "exploration"})
+        self.assertContains(r, "A career counsellor can help you evaluate them in more detail.")
+        self.assertContains(r, reverse("counsellor_request"))
+
+    def test_text_trigger_shows_handoff(self):
+        r = self.client.post(reverse("assistant"), {
+            "interest": "Please compare colleges for me", "priority": "exploration"})
+        self.assertContains(r, "college comparison")
+
+
+class DashboardTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user("boss", password="StrongPass#123", is_staff=True)
+        self.student = User.objects.create_user("student1", password="StrongPass#123")
+        StudentProfile.objects.create(
+            user=self.student, full_name="Asha Verma",
+            current_education="Class 12 science",
+            career_interests="engineering", budget=Decimal("500000"))
+        college = make_college("Shortlisted College")
+        self.lead = Lead.objects.create(
+            user=self.student, name="Asha Verma", lead_type="counselling_request",
+            consent_given=True, application_status="pending",
+            assigned_to=self.staff)
+        self.lead.shortlist.add(college)
+        Lead.objects.create(user=self.student, lead_type="college_enquiry", consent_given=True)
+
+    def test_students_cannot_open_dashboard(self):
+        self.client.login(username="student1", password="StrongPass#123")
+        r = self.client.get(reverse("lead_dashboard"))
+        self.assertNotEqual(r.status_code, 200)
+
+    def test_anonymous_cannot_open_dashboard(self):
+        self.assertNotEqual(self.client.get(reverse("lead_dashboard")).status_code, 200)
+
+    def test_staff_sees_counts_and_journey(self):
+        self.client.login(username="boss", password="StrongPass#123")
+        r = self.client.get(reverse("lead_dashboard"))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Counselling requests")
+        self.assertContains(r, "College enquiries")
+        self.assertContains(r, "Class 12 science")
+        self.assertContains(r, "Shortlisted College")
+        self.assertContains(r, "Application pending")
+        self.assertContains(r, "boss")
+
+    def test_tier_defaults_follow_pdf_section_15(self):
+        self.assertEqual(self.lead.tier, "paid")
+        college_lead = Lead.objects.filter(lead_type="college_enquiry").get()
+        self.assertEqual(college_lead.tier, "lead")
+
+
+class LeadAdminTests(TestCase):
+    def setUp(self):
+        self.boss = User.objects.create_superuser("boss", "b@example.com", "StrongPass#123")
+        self.student = User.objects.create_user("student1", password="StrongPass#123")
+        self.lead = Lead.objects.create(user=self.student, lead_type="counselling_request", consent_given=True)
+        self.client.login(username="boss", password="StrongPass#123")
+
+    def test_pages_load(self):
+        self.assertEqual(self.client.get("/admin/core/lead/").status_code, 200)
+        self.assertEqual(self.client.get(f"/admin/core/lead/{self.lead.pk}/change/").status_code, 200)
+
+    def test_assign_to_me_action(self):
+        self.client.post("/admin/core/lead/", {
+            "action": "assign_to_me", "_selected_action": [self.lead.pk]})
+        self.lead.refresh_from_db()
+        self.assertEqual(self.lead.assigned_to, self.boss)
+        self.assertEqual(self.lead.stage, "counsellor_assigned")
+
+    def test_mark_contacted_action(self):
+        self.client.post("/admin/core/lead/", {
+            "action": "mark_contacted", "_selected_action": [self.lead.pk]})
+        self.lead.refresh_from_db()
+        self.assertEqual(self.lead.stage, "contacted")

@@ -239,6 +239,7 @@
             <a href="{% url 'careers' %}">Explore Careers</a>
             <a href="{% url 'colleges' %}">Colleges</a>
             <a href="{% url 'opportunities' %}">Opportunities</a>
+            <a href="{% url 'my_requests' %}">My Requests</a>
         </nav>
     </header>
 
@@ -272,6 +273,8 @@
                 <a href="{% url 'opportunity_recommend' %}">scholarships and opportunities for me</a>
                 &middot;
                 <a href="{% url 'opportunities' %}">browse all opportunities</a>
+                &middot;
+                <a href="{% url 'counsellor_request' %}">ask for a counsellor</a>
             </p>
 
             {% if profile and profile.full_name %}
@@ -346,6 +349,23 @@
                 </p>
             {% endif %}
         </section>
+
+        {% if handoff %}
+        <section class="question-card" aria-label="Talk to a counsellor">
+            <h2>A counsellor can help here</h2>
+            {% for item in handoff %}
+                <p class="message assistant-message">{{ item.message }}</p>
+                <p class="notice">Why we are suggesting this: {{ item.label }}.</p>
+            {% endfor %}
+            <p>
+                <a href="{% url 'counsellor_request' %}?trigger={{ handoff.0.key }}">Request a counsellor</a>
+            </p>
+            <p class="notice">
+                Nothing is sent until you submit the request form. This
+                assistant does not replace a counsellor.
+            </p>
+        </section>
+        {% endif %}
 
         <section class="question-card">
             <h2>Tell us more</h2>

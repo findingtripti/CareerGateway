@@ -1,0 +1,67 @@
+{% extends "core/base.html" %}
+
+{% block title %}Lead dashboard | Career Gateway{% endblock %}
+
+{% block extra_head %}
+{% include "core/_college_styles.html" %}
+<style>
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin: 12px 0 20px; }
+    .stat { border: 1px solid #d5dcf0; border-radius: 10px; padding: 12px; background: #fcfdff; }
+    .stat strong { display: block; font-size: 26px; color: #243b6b; }
+    .stat span { font-size: 13px; color: #55607a; }
+    .journey { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0; font-size: 14px; }
+    .journey .step { background: #eef3ff; border-radius: 6px; padding: 4px 8px; }
+    .journey .arrow { color: #7b88a8; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>Lead dashboard</h1>
+<p class="muted">Staff only. {{ total }} lead{{ total|pluralize }} in total, {{ unassigned }} open without a counsellor.
+    <a href="/admin/core/lead/">Manage in admin</a></p>
+
+<h2>Lead journey</h2>
+<div class="stat-grid">
+    {% for label, count in type_counts %}
+        <div class="stat"><strong>{{ count }}</strong><span>{{ label }}</span></div>
+    {% endfor %}
+</div>
+
+<h2>By stage</h2>
+<div class="stat-grid">
+    {% for label, count in stage_counts %}
+        <div class="stat"><strong>{{ count }}</strong><span>{{ label }}</span></div>
+    {% endfor %}
+</div>
+
+<h2>By revenue tier</h2>
+<p class="muted">Labels only. No payment is taken anywhere in this version.</p>
+<div class="stat-grid">
+    {% for label, count in tier_counts %}
+        <div class="stat"><strong>{{ count }}</strong><span>{{ label }}</span></div>
+    {% endfor %}
+</div>
+
+<h2>Recent leads</h2>
+{% for row in rows %}
+    <article class="item-card">
+        <h3>{{ row.lead.get_lead_type_display }} #{{ row.lead.pk }}
+            <span class="badge">{{ row.lead.get_stage_display }}</span>
+            <span class="badge">{{ row.lead.get_tier_display }}</span></h3>
+        <div class="journey">
+            {% for label, value in row.journey %}
+                <span class="step"><strong>{{ label }}:</strong> {{ value }}</span>{% if not forloop.last %}<span class="arrow">&rarr;</span>{% endif %}
+            {% endfor %}
+        </div>
+        {% if row.lead.message %}<p class="muted">{{ row.lead.message|truncatechars:200 }}</p>{% endif %}
+        <p class="muted">
+            {{ row.lead.created_at|date:"j M Y H:i" }}
+            {% if row.lead.contact_email %}&middot; {{ row.lead.contact_email }}{% endif %}
+            {% if row.lead.contact_phone %}&middot; {{ row.lead.contact_phone }}{% endif %}
+            &middot; <a href="/admin/core/lead/{{ row.lead.pk }}/change/">Open in admin</a>
+        </p>
+    </article>
+{% empty %}
+    <p class="banner info">No leads yet.</p>
+{% endfor %}
+{% endblock %}

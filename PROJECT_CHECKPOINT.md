@@ -125,3 +125,13 @@ The tests lock in CURRENT behaviour, not ideal behaviour. For example, profile f
 - `seed_demo_opportunities` adds FICTIONAL labelled data (one already expired on purpose).
 - Tests: 129 passing in the build sandbox.
 - Next: M5 counsellor handoff on the 7 triggers + enquiry/lead capture (sec 8, 14).
+
+## 15. Milestone 5 - Counsellor handoff and leads (PDF sections 8, 14, 15) [REQ-02.9, 02.10, 08, 14 (part), 15 (labels)]
+- `core/handoff.py`: the seven PDF section 8 situations, whole-phrase matching, so the reason is always shown. Two or more reasonable options also triggers the PDF's suggested message word for word. It only SUGGESTS a counsellor.
+- `Lead` model (migration 0008): lead types match the PDF section 14 list (student, career, college enquiries, counselling and mentor requests, admission leads), stage, counsellor assignment, college shortlist, application status, consent, tier label (section 15). No booking, no payment.
+- Pages: /counsellor/request/, college and career "Ask" forms, /requests/ (own leads only), /staff/leads/ (staff only dashboard with lead journey).
+- Consent is required, contact needs a valid email or phone, message capped at 2000 characters, thanks page says nothing is booked.
+- Admin: Lead list with filters and actions (contacted, qualified, assign to me).
+- Honest limits: no email or SMS is sent yet (M10). Counsellor assignment is a manual admin action. Tier is a label only.
+- Tests: 162 passing in the build sandbox.
+- Next: M7 mentors (sec 9), then M8 knowledge base, M9 school version, M10 wrap-up.
