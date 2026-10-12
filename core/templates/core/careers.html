@@ -315,6 +315,21 @@
 
                 <h3>Possible job roles</h3>
                 <p>{{ career.roles }}</p>
+
+                <h3>Coding in day-to-day work</h3>
+                <p>{{ career.coding_label }}</p>
+
+                <p>
+                    <small>
+                        Information status: {{ career.verification_label }}.
+                    </small>
+                </p>
+
+                <p>
+                    <a href="{% url 'career_detail' career.slug %}">
+                        Read the full career profile &rarr;
+                    </a>
+                </p>
                 <div class="actions" style="margin-top: 18px;">
                     {% if user.is_authenticated %}
                         <a

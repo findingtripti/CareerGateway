@@ -1,6 +1,6 @@
 from decimal import Decimal, InvalidOperation
 
-from django.shortcuts import render, redirect
+from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib import messages
@@ -15,7 +15,8 @@ from .assistant_options import (
     WELCOME_TEXT,
     WELCOME_TITLE,
 )
-from .models import StudentProfile
+from .career_matching import build_profile_text, explain_match, rank_careers
+from .models import Career, StudentProfile
 
 
 def home(request):
@@ -184,191 +185,82 @@ def student_profile(request):
         {"profile": profile}
     )
     
-def career_exploration(request):
-    careers = [
-        {
-            "title": "Software Development",
-            "description": (
-                "Design, build, test, and maintain software applications."
-            ),
-            "skills": "Python, programming, problem-solving",
-            "pathway": (
-                "Computer Science degree or relevant skill-based learning"
-            ),
-            "daily_work": (
-                "Build, test, debug, and maintain software applications "
-                "with a team."
-            ),
-            "exams": (
-                "Some engineering programmes use JEE or institution-specific "
-                "entrance tests. Other learning routes may not require "
-                "a separate entrance exam."
-            ),
-            "roles": (
-                "Software Developer, Web Developer, Application Developer"
-            ),
-            "keywords": [
-                "software", "developer", "programming", "coding",
-                "python", "java", "web", "application", "computer science"
-            ],
-        },
-        {
-            "title": "Data Science",
-            "description": (
-                "Use data, statistics, and computing to discover patterns "
-                "and support decisions."
-            ),
-            "skills": "Python, statistics, SQL, data analysis",
-            "pathway": (
-                "Relevant degree plus statistics, programming, and data projects"
-            ),
-            "daily_work": (
-                "Analyse datasets, identify patterns, create visualisations, "
-                "and support data-driven decisions."
-            ),
-            "exams": (
-                "Depending on the programme, examples may include JEE, CUET, "
-                "or institution-specific admission tests. Requirements vary."
-            ),
-            "roles": (
-                "Data Analyst, Junior Data Scientist, "
-                "Business Intelligence Analyst"
-            ),
-            "keywords": [
-                "data", "analytics", "analysis", "statistics", "sql",
-                "machine learning", "math", "mathematics", "research"
-            ],
-        },
-        {
-            "title": "Cybersecurity",
-            "description": (
-                "Help protect systems, networks, and information "
-                "from security threats."
-            ),
-            "skills": "Networking, operating systems, security fundamentals",
-            "pathway": (
-                "IT or computing foundations plus practical security learning"
-            ),
-            "daily_work": (
-                "Monitor systems, investigate security alerts, assess "
-                "vulnerabilities, and help protect digital information."
-            ),
-            "exams": (
-                "Depending on the programme, examples may include JEE, CUET, "
-                "or institution-specific admission tests. Check the "
-                "institution's requirements."
-            ),
-            "roles": "Security Analyst, SOC Analyst, Security Engineer",
-            "keywords": [
-                "cybersecurity", "cyber security", "security", "network",
-                "networking", "ethical hacking", "linux", "system", "privacy"
-            ],
-        },
-        {
-            "title": "UI/UX Design",
-            "description": (
-                "Research user needs and design accessible, useful "
-                "digital experiences."
-            ),
-            "skills": "Design thinking, user research, prototyping",
-            "pathway": (
-                "Design or related education, practice, and a portfolio"
-            ),
-            "daily_work": (
-                "Understand user needs, create wireframes and prototypes, "
-                "test designs, and improve digital experiences."
-            ),
-            "exams": (
-                "Some design programmes use UCEED, NID DAT, or "
-                "institution-specific admission processes. Check current "
-                "eligibility and exam requirements."
-            ),
-            "roles": "UI Designer, UX Designer, Product Designer",
-            "keywords": [
-                "design", "ui", "ux", "creative", "creativity", "visual",
-                "user experience", "product design", "prototyping"
-            ],
-        },
-    ]
+PRIORITY_LABELS = {
+    "creativity": "Creativity and design",
+    "problem_solving": "Technical problem-solving",
+    "data": "Data and research",
+    "security": "Security and investigation",
+    "exploration": "Exploring different options",
+}
 
+
+def career_card(career):
+    """Plain dictionary of one career for templates and the compare script.
+
+    Keys such as daily_work, skills, pathway, exams and roles are read by the
+    JavaScript on the careers page, so keep them stable.
+    """
+    return {
+        "slug": career.slug,
+        "title": career.title,
+        "description": career.summary,
+        "daily_work": career.what_professionals_do,
+        "skills": career.important_skills,
+        "pathway": career.career_pathway,
+        "exams": career.entrance_exams,
+        "roles": career.possible_roles,
+        "next_step": career.first_step,
+        "coding_label": career.get_coding_intensity_display(),
+        "verification_label": career.get_verification_status_display(),
+    }
+
+
+def career_exploration(request):
     profile = None
 
     if request.user.is_authenticated:
-        try:
-            profile = request.user.student_profile
-        except StudentProfile.DoesNotExist:
-            profile = None
+        profile = StudentProfile.objects.filter(user=request.user).first()
 
-    profile_text = ""
+    ranked, _ = rank_careers(
+        Career.objects.filter(is_published=True),
+        profile_text=build_profile_text(profile),
+    )
 
-    if profile:
-        profile_text = " ".join([
-            profile.current_education or "",
-            profile.academic_background or "",
-            profile.subjects_and_interests or "",
-            profile.skills or "",
-            profile.career_interests or "",
-            profile.career_goals or "",
-        ]).lower()
+    cards = []
+    for result in ranked:
+        card = career_card(result["career"])
+        matches = result["profile_matches"]
+        card["match_count"] = len(matches)
 
-    for career in careers:
-        matched_keywords = [
-            keyword
-            for keyword in career["keywords"]
-            if keyword in profile_text
-        ]
-
-        career["match_count"] = len(matched_keywords)
-
-        if matched_keywords:
-            career["match_reason"] = (
-                "Related profile details: "
-                + ", ".join(matched_keywords[:4])
+        if matches:
+            card["match_reason"] = (
+                "Related profile details: " + ", ".join(matches[:4])
             )
         else:
-            career["match_reason"] = (
+            card["match_reason"] = (
                 "Explore this option to see whether its work "
                 "and required skills fit your interests."
             )
 
-    next_steps = {
-        "Software Development": (
-            "Build a small Python project, practise problem-solving, "
-            "and learn Git and GitHub."
-        ),
-        "Data Science": (
-            "Practise Python, learn basic statistics, and analyse "
-            "a small dataset."
-        ),
-        "Cybersecurity": (
-            "Learn networking fundamentals, Linux basics, and practise "
-            "in a legal beginner cybersecurity lab."
-        ),
-        "UI/UX Design": (
-            "Study usability principles and create a simple "
-            "wireframe for a student-focused app."
-        ),
-    }
-
-    for career in careers:
-        career["next_step"] = next_steps.get(
-            career["title"],
-            "Explore the required skills and try a small beginner project."
-        )
-
-    careers.sort(
-        key=lambda career: career["match_count"],
-        reverse=True,
-    )
+        cards.append(card)
 
     return render(
         request,
         "core/careers.html",
-        {
-            "careers": careers,
-            "profile": profile,
-        },
+        {"careers": cards, "profile": profile},
     )
+
+
+def career_detail(request, slug):
+    career = get_object_or_404(Career, slug=slug, is_published=True)
+
+    return render(
+        request,
+        "core/career_detail.html",
+        {"career": career, "faqs": career.faqs.all()},
+    )
+
+
 @login_required(login_url="login")
 def career_assistant(request):
     profile = StudentProfile.objects.filter(
@@ -378,217 +270,49 @@ def career_assistant(request):
     interest = ""
     priority = ""
     student_answer = ""
+    less_coding = False
     recommendations = []
+    excluded_titles = []
 
     # Only known option keys are accepted; anything else is ignored.
     topic = request.GET.get("topic", "")
     if topic not in OPTIONS_BY_KEY:
         topic = ""
 
-    career_options = [
-        {
-            "title": "Software Development",
-            "description": (
-                "Build, test and maintain websites, applications "
-                "and software systems."
-            ),
-            "skills": "Python, programming, problem-solving",
-            "roles": "Software Developer, Web Developer",
-            "pathway": (
-                "Learn programming fundamentals, practise Python, "
-                "and build small software projects."
-            ),
-            "keywords": [
-                "coding", "code", "programming", "python",
-                "java", "software", "computer", "web",
-                "problem solving",
-            ],
-            "reason": "This path involves building technical solutions.",
-            "priority": "problem_solving",
-        },
-        {
-            "title": "Data Science",
-            "description": (
-                "Use data, statistics and computing to find patterns "
-                "and support decisions."
-            ),
-            "skills": "Python, SQL, statistics, data analysis",
-            "roles": "Data Analyst, Junior Data Scientist",
-            "pathway": (
-                "Learn Python, SQL, statistics, and data visualisation, "
-                "then practise with datasets."
-            ),
-            "keywords": [
-                "data", "statistics", "math", "mathematics",
-                "analysis", "analytics", "research", "sql",
-                "machine learning",
-            ],
-            "reason": (
-                "This path focuses on analysing data and finding insights."
-            ),
-            "priority": "data",
-        },
-        {
-            "title": "Cybersecurity",
-            "description": (
-                "Help protect computer systems, networks and "
-                "digital information."
-            ),
-            "skills": "Networking, Linux, security fundamentals",
-            "roles": "Security Analyst, SOC Analyst",
-            "pathway": (
-                "Learn networking, Linux, and operating-system fundamentals, "
-                "then practise using authorised security labs."
-            ),
-            "keywords": [
-                "security", "cybersecurity", "cyber security",
-                "network", "networking", "linux", "privacy",
-                "ethical hacking",
-            ],
-            "reason": (
-                "This path focuses on investigating and preventing security risks."
-            ),
-            "priority": "security",
-        },
-        {
-            "title": "UI/UX Design",
-            "description": (
-                "Understand user needs and design useful, "
-                "accessible digital experiences."
-            ),
-            "skills": "Design thinking, user research, prototyping",
-            "roles": "UI Designer, UX Designer, Product Designer",
-            "pathway": (
-                "Learn user research, wireframing, prototyping, "
-                "and accessibility, then build a design portfolio."
-            ),
-            "keywords": [
-                "design", "creative", "creativity", "visual",
-                "ui", "ux", "user experience", "prototyping",
-                "art",
-            ],
-            "reason": (
-                "This path combines creativity with understanding users."
-            ),
-            "priority": "creativity",
-        },
-    ]
-
     if request.method == "POST":
         interest = request.POST.get("interest", "").strip()[:2000]
         priority = request.POST.get("priority", "").strip()
+        less_coding = request.POST.get("less_coding") == "1"
         student_answer = interest or "No additional interests provided."
     elif topic == "unsure":
         priority = "exploration"
 
-    profile_text = ""
+    profile_text = build_profile_text(profile)
 
-    if profile:
-        profile_text = " ".join([
-            profile.current_education or "",
-            profile.academic_background or "",
-            profile.subjects_and_interests or "",
-            profile.skills or "",
-            profile.career_interests or "",
-            profile.career_goals or "",
-        ]).lower()
-
-    combined_text = f"{profile_text} {interest.lower()}"
-
-    priority_labels = {
-        "creativity": "Creativity and design",
-        "problem_solving": "Technical problem-solving",
-        "data": "Data and research",
-        "security": "Security and investigation",
-        "exploration": "Exploring different options",
-    }
-
-    for career in career_options:
-        profile_matches = [
-            keyword
-            for keyword in career["keywords"]
-            if keyword in profile_text
-        ]
-
-        answer_matches = [
-            keyword
-            for keyword in career["keywords"]
-            if keyword in interest.lower()
-        ]
-
-        score = 0
-        score += len(profile_matches) * 2
-        score += len(answer_matches) * 3
-
-        if priority == career["priority"]:
-            score += 3
-
-        career["score"] = score
-
-        if profile_matches and answer_matches:
-            career["reason"] = (
-                "Your profile and current answer both relate to: "
-                + ", ".join(
-                    list(dict.fromkeys(
-                        profile_matches + answer_matches
-                    ))[:3]
-                )
-            )
-        elif answer_matches:
-            career["reason"] = (
-                "Based on your answer, related interests include: "
-                + ", ".join(answer_matches[:3])
-            )
-        elif profile_matches:
-            career["reason"] = (
-                "Based on your saved profile, related areas include: "
-                + ", ".join(profile_matches[:3])
-            )
-        elif priority == career["priority"]:
-            career["reason"] = (
-                "This option aligns with your selected priority: "
-                + priority_labels.get(priority, priority)
-                + ". Explore its daily work and required skills."
-            )
-        else:
-            career["reason"] = (
-                career["reason"]
-                + " Explore its daily work and required skills "
-                "to see whether it suits you."
-            )
-
-    next_steps = {
-        "Software Development": (
-            "Build a small Python project, practise problem-solving, "
-            "and learn Git and GitHub."
-        ),
-        "Data Science": (
-            "Practise Python, learn basic statistics, and analyse "
-            "a small dataset."
-        ),
-        "Cybersecurity": (
-            "Learn networking fundamentals, Linux basics, and practise "
-            "in a legal beginner cybersecurity lab."
-        ),
-        "UI/UX Design": (
-            "Study usability principles and create a simple "
-            "wireframe for a student-focused app."
-        ),
-    }
-
-    for career in career_options:
-        career["next_step"] = next_steps.get(
-            career["title"],
-            "Explore the required skills and try a small beginner project."
-        )
-
-    career_options.sort(
-        key=lambda career: career["score"],
-        reverse=True,
+    ranked, excluded = rank_careers(
+        Career.objects.filter(is_published=True),
+        profile_text=profile_text,
+        interest_text=interest,
+        priority=priority,
+        less_coding=less_coding,
     )
 
     if request.method == "POST":
-        recommendations = career_options[:3]
+        for result in ranked[:3]:
+            career = result["career"]
+            recommendations.append({
+                "title": career.title,
+                "slug": career.slug,
+                "description": career.summary,
+                "reason": explain_match(
+                    result, PRIORITY_LABELS.get(priority, priority)
+                ),
+                "skills": career.important_skills,
+                "pathway": career.career_pathway,
+                "next_step": career.first_step,
+            })
+
+        excluded_titles = [career.title for career in excluded]
 
         assistant_message = (
             "Based on the information available, here are some "
@@ -626,10 +350,12 @@ def career_assistant(request):
             "profile": profile,
             "interest": interest,
             "priority": priority,
+            "less_coding": less_coding,
             "student_answer": student_answer,
             "recommendations": recommendations,
+            "excluded_titles": excluded_titles,
             "assistant_message": assistant_message,
-            "priority_labels": priority_labels,
+            "priority_labels": PRIORITY_LABELS,
             "welcome_title": WELCOME_TITLE,
             "welcome_text": WELCOME_TEXT,
             "starting_options": STARTING_OPTIONS,

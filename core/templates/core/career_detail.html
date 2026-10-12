@@ -1,0 +1,156 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ career.title }} | Career Gateway{% endblock %}
+
+{% block extra_head %}
+<style>
+    .career-section {
+        margin-top: 22px;
+    }
+
+    .career-section h2 {
+        color: #243b6b;
+        font-size: 19px;
+        margin: 0 0 6px;
+    }
+
+    .career-section p {
+        margin: 0;
+    }
+
+    .quality-box {
+        margin-top: 28px;
+        padding: 14px 16px;
+        background: #f7f8fc;
+        border: 1px solid #d5dcf0;
+        border-radius: 8px;
+        font-size: 14px;
+    }
+
+    .next-step {
+        margin-top: 28px;
+        padding: 16px;
+        background: #eef3ff;
+        border-radius: 8px;
+    }
+
+    .faq dt {
+        font-weight: bold;
+        margin-top: 12px;
+    }
+
+    .faq dd {
+        margin: 4px 0 0;
+        line-height: 1.6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <p><a href="{% url 'careers' %}">&larr; All careers</a></p>
+
+    <h1>{{ career.title }}</h1>
+    <p>{{ career.summary }}</p>
+
+    <section class="career-section">
+        <h2>What professionals do</h2>
+        <p>{{ career.what_professionals_do }}</p>
+    </section>
+
+    <section class="career-section">
+        <h2>Required education</h2>
+        <p>{{ career.required_education }}</p>
+    </section>
+
+    <section class="career-section">
+        <h2>Entrance examinations</h2>
+        <p>{{ career.entrance_exams }}</p>
+    </section>
+
+    <section class="career-section">
+        <h2>Important skills</h2>
+        <p>{{ career.important_skills }}</p>
+    </section>
+
+    <section class="career-section">
+        <h2>Career pathway</h2>
+        <p>{{ career.career_pathway }}</p>
+    </section>
+
+    <section class="career-section">
+        <h2>Possible roles</h2>
+        <p>{{ career.possible_roles }}</p>
+    </section>
+
+    <section class="career-section">
+        <h2>Higher education options</h2>
+        <p>{{ career.higher_education_options }}</p>
+    </section>
+
+    <section class="career-section">
+        <h2>Work environments</h2>
+        <p>{{ career.work_environments }}</p>
+    </section>
+
+    <section class="career-section">
+        <h2>Professional insights</h2>
+        <p>{{ career.professional_insights }}</p>
+    </section>
+
+    <section class="career-section">
+        <h2>Frequently asked questions</h2>
+        {% if faqs %}
+            <dl class="faq">
+                {% for faq in faqs %}
+                    <dt>{{ faq.question }}</dt>
+                    <dd>{{ faq.answer }}</dd>
+                {% endfor %}
+            </dl>
+        {% else %}
+            <p>No questions have been added for this career yet.</p>
+        {% endif %}
+    </section>
+
+    {% if career.first_step %}
+        <section class="career-section">
+            <h2>A practical first step</h2>
+            <p>{{ career.first_step }}</p>
+        </section>
+    {% endif %}
+
+    <div class="next-step">
+        <strong>Next step:</strong>
+        Talk to a career counsellor or a relevant professional mentor to
+        discuss whether this path suits you.
+        <a href="{% url 'assistant' %}?topic=professional#guidance">
+            Talk to a professional
+        </a>
+    </div>
+
+    <div class="quality-box">
+        <strong>About this information</strong>
+        <p>
+            Status: {{ career.get_verification_status_display }}.
+            {% if career.last_reviewed %}
+                Last reviewed: {{ career.last_reviewed|date:"j F Y" }}.
+            {% else %}
+                Not reviewed yet.
+            {% endif %}
+        </p>
+        {% if career.source_note %}
+            <p>{{ career.source_note }}</p>
+        {% endif %}
+        {% if career.source_url %}
+            <p>
+                Source:
+                <a href="{{ career.source_url }}" rel="noopener noreferrer">
+                    {{ career.source_url }}
+                </a>
+            </p>
+        {% endif %}
+        <p>
+            Entrance exams and requirements change. Check the official
+            website of the institution or exam body before you decide.
+        </p>
+    </div>
+{% endblock %}

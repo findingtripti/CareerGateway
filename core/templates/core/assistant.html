@@ -204,6 +204,19 @@
             color: #4b5563;
         }
 
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 14px 0;
+            font-weight: normal;
+        }
+
+        .checkbox-row input {
+            width: auto;
+            min-height: 0;
+        }
+
         .option-badge {
             display: inline-block;
             margin-top: 6px;
@@ -298,8 +311,21 @@
                             <strong>Suggested learning pathway:</strong>
                             {{ career.pathway }}
                         </p>
+
+                        <p>
+                            <a href="{% url 'career_detail' career.slug %}">
+                                Read the full career profile &rarr;
+                            </a>
+                        </p>
                     </article>
                 {% endfor %}
+
+                {% if excluded_titles %}
+                    <p>
+                        Not shown because you prefer less coding:
+                        {{ excluded_titles|join:", " }}.
+                    </p>
+                {% endif %}
 
                 <p>
                     These are exploratory suggestions, not a final
@@ -357,6 +383,12 @@
                         I am still exploring
                     </option>
                 </select>
+
+                <label class="checkbox-row">
+                    <input type="checkbox" name="less_coding" value="1"
+                           {% if less_coding %}checked{% endif %}>
+                    I would prefer a career without heavy day-to-day coding
+                </label>
 
                 <button type="submit">Get Guidance</button>
 

@@ -93,6 +93,9 @@ Step	What	Evidence
 4	19 automated tests in core/tests.py (public pages, signup, login/logout, profile, assistant)	python manage.py test → Ran 19 tests ... OK
 | 5 | Phase 2: signup password validators (commit 88e4422), profile clear and safe validation (31aacee), login safe `?next=` (342e1cf) | user-run tests and browser checks |
 | 6 | Milestone 1: shared `base.html`, styled login/signup (REQ-16 mobile responsive), assistant PDF §3 welcome text and 7 starting options in `core/assistant_options.py`, PDF §17 disclaimer. Unbuilt options say "not available yet" and never claim a booking | 47 tests OK in a verified copy of the latest zip; desktop and mobile screenshots checked; NOT yet run on the user's machine |
+| 7 | Milestone 2: `Career` and `CareerFAQ` models (PDF §6, 10 areas + data-quality fields), migration 0005, admin editing, `seed_careers` command (8 careers), shared `career_matching.py` (whole-word, explainable, hard "less coding" constraint kept separate from preferences), careers list, new career detail page, assistant reads the database | 71 tests OK on a clean copy of the user's tree; upgrade from migration 0004 and repeated seeding checked; screenshots at desktop and mobile width checked; NOT yet run on the user's machine |
+
+Content note: the 8 seeded careers were drafted from general knowledge, contain no salaries, cut-offs or institution claims, and are all stored as "needs_verification" with a visible notice. They must be reviewed against official sources before being described as verified. PDF §5 lists networking and technical sales too; those two are not seeded yet (data analysis is covered by Data Science).
 
 Environment variable names (values never committed): DJANGO_SECRET_KEY, DJANGO_DEBUG, DJANGO_ALLOWED_HOSTS. Run: .\.venv\Scripts\Activate.ps1 → python manage.py runserver. Test: python manage.py test.
 

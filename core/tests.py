@@ -1,9 +1,11 @@
 from django.contrib.auth.models import User
+from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 from django.utils.html import escape
 
-from .models import StudentProfile
+from .career_matching import find_matches, rank_careers
+from .models import Career, CareerFAQ, StudentProfile
 
 
 class PublicPageTests(TestCase):
@@ -300,6 +302,7 @@ class ProfileClearAndValidationTests(TestCase):
 
 class AssistantTests(TestCase):
     def setUp(self):
+        call_command("seed_careers", verbosity=0)
         User.objects.create_user("student1", password="StrongPass#123")
 
     def test_assistant_requires_login(self):
@@ -399,3 +402,244 @@ class AssistantStartingOptionsTests(TestCase):
         response = self.get_assistant()
         self.assertContains(response, "does not replace")
         self.assertContains(response, "professional career counsellor")
+
+
+PDF_SECTION_6_HEADINGS = [
+    "What professionals do",
+    "Required education",
+    "Entrance examinations",
+    "Important skills",
+    "Career pathway",
+    "Possible roles",
+    "Higher education options",
+    "Work environments",
+    "Professional insights",
+    "Frequently asked questions",
+]
+
+
+class SeedCareersTests(TestCase):
+    def test_seed_creates_careers_with_every_pdf_field_filled(self):
+        call_command("seed_careers", verbosity=0)
+        self.assertEqual(Career.objects.count(), 8)
+
+        fields = [
+            "summary", "what_professionals_do", "required_education",
+            "entrance_exams", "important_skills", "career_pathway",
+            "possible_roles", "higher_education_options",
+            "work_environments", "professional_insights", "first_step",
+            "keywords",
+        ]
+        for career in Career.objects.all():
+            for field in fields:
+                self.assertTrue(
+                    getattr(career, field).strip(),
+                    f"{career.title} has empty {field}",
+                )
+            self.assertGreaterEqual(career.faqs.count(), 2, career.title)
+
+    def test_seed_is_safe_to_repeat_and_keeps_admin_edits(self):
+        call_command("seed_careers", verbosity=0)
+        career = Career.objects.get(slug="cybersecurity")
+        career.summary = "Edited by staff."
+        career.save()
+
+        call_command("seed_careers", verbosity=0)
+
+        self.assertEqual(Career.objects.count(), 8)
+        career.refresh_from_db()
+        self.assertEqual(career.summary, "Edited by staff.")
+        self.assertEqual(career.faqs.count(), 2)
+
+    def test_seeded_content_is_not_claimed_as_verified(self):
+        call_command("seed_careers", verbosity=0)
+        for career in Career.objects.all():
+            self.assertEqual(
+                career.verification_status, "needs_verification"
+            )
+            self.assertIsNone(career.last_reviewed)
+            self.assertTrue(career.source_note)
+
+
+class CareerMatchingTests(TestCase):
+    def setUp(self):
+        call_command("seed_careers", verbosity=0)
+
+    def test_matching_uses_whole_words_only(self):
+        self.assertEqual(find_matches(["ui"], "i enjoy building things"), [])
+        self.assertEqual(find_matches(["ui"], "i like ui design"), ["ui"])
+
+    def test_matching_handles_phrases(self):
+        self.assertEqual(
+            find_matches(["machine learning"], "interested in machine learning"),
+            ["machine learning"],
+        )
+
+    def test_profile_words_raise_a_career_in_the_ranking(self):
+        ranked, excluded = rank_careers(
+            Career.objects.all(), interest_text="python programming coding"
+        )
+        self.assertEqual(ranked[0]["career"].slug, "software-development")
+        self.assertEqual(excluded, [])
+        self.assertIn("python", ranked[0]["answer_matches"])
+
+    def test_less_coding_excludes_coding_heavy_careers(self):
+        ranked, excluded = rank_careers(
+            Career.objects.all(),
+            interest_text="python programming coding",
+            less_coding=True,
+        )
+        shown = [result["career"].slug for result in ranked]
+        self.assertNotIn("software-development", shown)
+        self.assertEqual(
+            [career.slug for career in excluded], ["software-development"]
+        )
+
+    def test_priority_adds_to_the_score(self):
+        ranked, _ = rank_careers(Career.objects.all(), priority="creativity")
+        self.assertEqual(ranked[0]["career"].slug, "ui-ux-design")
+        self.assertTrue(ranked[0]["priority_match"])
+
+
+class CareerPagesTests(TestCase):
+    def setUp(self):
+        call_command("seed_careers", verbosity=0)
+
+    def test_careers_page_lists_published_careers_from_database(self):
+        response = self.client.get(reverse("careers"))
+        self.assertEqual(len(response.context["careers"]), 8)
+        self.assertContains(response, "Technology Consulting")
+
+    def test_unpublished_career_is_hidden_everywhere(self):
+        career = Career.objects.get(slug="cloud-computing")
+        career.is_published = False
+        career.save()
+
+        listing = self.client.get(reverse("careers"))
+        self.assertNotContains(listing, "Cloud Computing")
+
+        detail = self.client.get(
+            reverse("career_detail", args=["cloud-computing"])
+        )
+        self.assertEqual(detail.status_code, 404)
+
+    def test_career_cards_keep_keys_used_by_the_compare_script(self):
+        response = self.client.get(reverse("careers"))
+        card = response.context["careers"][0]
+        for key in ("title", "daily_work", "skills", "pathway",
+                    "exams", "roles", "match_count", "match_reason"):
+            self.assertIn(key, card)
+
+    def test_careers_page_links_to_each_detail_page(self):
+        response = self.client.get(reverse("careers"))
+        self.assertContains(
+            response, reverse("career_detail", args=["data-science"])
+        )
+
+    def test_profile_orders_careers_for_logged_in_student(self):
+        user = User.objects.create_user("s1", password="StrongPass#123")
+        StudentProfile.objects.create(
+            user=user, skills="design, prototyping, creativity"
+        )
+        self.client.login(username="s1", password="StrongPass#123")
+        response = self.client.get(reverse("careers"))
+        self.assertEqual(response.context["careers"][0]["title"], "UI/UX Design")
+
+    def test_detail_page_shows_all_pdf_section_6_headings(self):
+        response = self.client.get(
+            reverse("career_detail", args=["data-science"])
+        )
+        self.assertEqual(response.status_code, 200)
+        for heading in PDF_SECTION_6_HEADINGS:
+            self.assertContains(response, heading)
+
+    def test_detail_page_shows_faqs_and_counsellor_next_step(self):
+        response = self.client.get(
+            reverse("career_detail", args=["data-science"])
+        )
+        self.assertContains(response, "Is data science only for people")
+        self.assertContains(response, "Talk to a career counsellor")
+
+    def test_detail_page_shows_data_quality_notice(self):
+        response = self.client.get(
+            reverse("career_detail", args=["data-science"])
+        )
+        self.assertContains(response, "Needs verification")
+        self.assertContains(response, "Not reviewed yet")
+
+    def test_unknown_career_returns_404(self):
+        response = self.client.get(
+            reverse("career_detail", args=["no-such-career"])
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_career_without_faqs_still_renders(self):
+        Career.objects.get(slug="data-science").faqs.all().delete()
+        response = self.client.get(
+            reverse("career_detail", args=["data-science"])
+        )
+        self.assertEqual(response.status_code, 200)
+
+
+class AssistantUsesCareerDatabaseTests(TestCase):
+    def setUp(self):
+        call_command("seed_careers", verbosity=0)
+        User.objects.create_user("student1", password="StrongPass#123")
+        self.client.login(username="student1", password="StrongPass#123")
+
+    def post(self, **data):
+        return self.client.post(reverse("assistant"), data)
+
+    def test_recommendations_come_from_database_with_detail_links(self):
+        response = self.post(interest="python programming coding")
+        titles = [r["title"] for r in response.context["recommendations"]]
+        self.assertEqual(titles[0], "Software Development")
+        self.assertContains(
+            response, reverse("career_detail", args=["software-development"])
+        )
+
+    def test_less_coding_choice_removes_coding_heavy_careers_and_says_why(self):
+        response = self.post(
+            interest="python programming coding", less_coding="1"
+        )
+        titles = [r["title"] for r in response.context["recommendations"]]
+        self.assertNotIn("Software Development", titles)
+        self.assertContains(response, "Not shown because you prefer less coding")
+        self.assertContains(response, "Software Development")
+
+    def test_unpublished_career_is_never_recommended(self):
+        Career.objects.filter(slug="software-development").update(
+            is_published=False
+        )
+        response = self.post(interest="python programming coding")
+        titles = [r["title"] for r in response.context["recommendations"]]
+        self.assertNotIn("Software Development", titles)
+
+    def test_assistant_does_not_crash_when_no_careers_exist(self):
+        Career.objects.all().delete()
+        response = self.post(interest="coding")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["recommendations"], [])
+
+    def test_whole_word_matching_in_assistant(self):
+        response = self.post(interest="I enjoy building things")
+        for result in response.context["recommendations"]:
+            self.assertNotIn("ui", result["reason"].split(": ")[-1].split(", "))
+
+
+class CareerAdminTests(TestCase):
+    def test_career_is_manageable_in_admin(self):
+        call_command("seed_careers", verbosity=0)
+        User.objects.create_superuser("boss", "b@example.com", "StrongPass#123")
+        self.client.login(username="boss", password="StrongPass#123")
+
+        listing = self.client.get(reverse("admin:core_career_changelist"))
+        self.assertEqual(listing.status_code, 200)
+        self.assertContains(listing, "Digital Forensics")
+
+        career = Career.objects.get(slug="digital-forensics")
+        edit = self.client.get(
+            reverse("admin:core_career_change", args=[career.pk])
+        )
+        self.assertEqual(edit.status_code, 200)
+        self.assertContains(edit, "Is digital forensics the same as")
