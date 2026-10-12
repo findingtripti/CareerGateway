@@ -117,3 +117,11 @@ The tests lock in CURRENT behaviour, not ideal behaviour. For example, profile f
 - `seed_demo_colleges` adds FICTIONAL labelled demo data. Replace with verified data before real use.
 - Tests: 108 passing in the build sandbox.
 - Next: M4 opportunities (sec 10) and counsellor handoff / leads (sec 8). Plan to Wednesday: M4-M10 in CareerGateway_Plan_to_Wednesday.xlsx.
+
+## 14. Milestone 4 - Opportunities and scholarships (PDF section 10) [REQ-10, 02.7]
+- Opportunity gains: min_education, related_careers, last_verified, source_note, is_demo, is_published; new type "Career Program" (PDF lists it). Migration 0007.
+- `core/opportunity_matching.py`: HARD = deadline passed, education below requirement (reason shown); SOFT = location, career interest (reorder only); UNKNOWN = no deadline / unknown education (flagged). Closing soon = 14 days or less.
+- Pages: /opportunities/ (search, type filter, expired labelled), /opportunities/<id>/, /opportunities/for-me/ (login). Assistant "Scholarships" option is now available.
+- `seed_demo_opportunities` adds FICTIONAL labelled data (one already expired on purpose).
+- Tests: 129 passing in the build sandbox.
+- Next: M5 counsellor handoff on the 7 triggers + enquiry/lead capture (sec 8, 14).

@@ -1,0 +1,9 @@
+<div class="badges">
+    <span class="badge">{{ opp.get_opportunity_type_display }}</span>
+    {% if status == "expired" %}<span class="badge warn">Deadline passed</span>
+    {% elif status == "soon" %}<span class="badge warn">Closing soon</span>
+    {% elif status == "none" %}<span class="badge">No deadline listed</span>{% endif %}
+    {% if opp.is_verified %}<span class="badge ok">Verified</span>{% else %}<span class="badge warn">Not verified yet</span>{% endif %}
+    {% if opp.is_demo %}<span class="badge demo">Demo (fictional)</span>{% endif %}
+    {% if stale %}<span class="badge warn">Information may be out of date</span>{% endif %}
+</div>

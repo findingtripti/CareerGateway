@@ -1,0 +1,66 @@
+{% extends "core/base.html" %}
+
+{% block title %}Opportunities | Career Gateway{% endblock %}
+
+{% block extra_head %}{% include "core/_college_styles.html" %}{% endblock %}
+
+{% block content %}
+<h1>Scholarships and opportunities</h1>
+<p>
+    Scholarships, internships, competitions, workshops and programs from the
+    Career Gateway database. Each one shows its deadline and when it was last
+    checked.
+</p>
+
+{% if has_demo %}
+    <p class="banner">
+        Some items here are <strong>fictional</strong> demo records. Do not
+        apply to them or rely on them.
+    </p>
+{% endif %}
+
+<p>
+    {% if user.is_authenticated %}
+        <a href="{% url 'opportunity_recommend' %}">See opportunities matched to my profile &rarr;</a>
+    {% else %}
+        <a href="{% url 'login' %}?next={% url 'opportunity_recommend' %}">Log in to see matches for your profile &rarr;</a>
+    {% endif %}
+</p>
+
+<form method="get" class="filter-form" role="search">
+    <div class="form-field">
+        <label for="q">Search</label>
+        <input id="q" name="q" type="text" value="{{ query }}" maxlength="100">
+    </div>
+    <div class="form-field">
+        <label for="type">Type</label>
+        <select id="type" name="type" style="width:100%;padding:10px 12px;border:1px solid #b9c3d9;border-radius:6px;font-size:16px;">
+            <option value="">All types</option>
+            {% for value, label in types %}
+                <option value="{{ value }}" {% if value == kind %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button class="button" type="submit">Filter</button>
+</form>
+
+{% for row in rows %}
+    {% with opp=row.opp status=row.status stale=row.stale %}
+    <article class="item-card">
+        <h2><a href="{% url 'opportunity_detail' opp.pk %}">{{ opp.title }}</a></h2>
+        <p class="muted">
+            {% if opp.location %}{{ opp.location }} &middot; {% endif %}
+            {% if opp.deadline %}Deadline {{ opp.deadline|date:"j M Y" }}{% else %}No deadline listed{% endif %}
+        </p>
+        {% include "core/_opp_badges.html" %}
+    </article>
+    {% endwith %}
+{% empty %}
+    <p class="banner info">No opportunities match. Try removing a filter.</p>
+{% endfor %}
+
+<p class="disclaimer">
+    Career Gateway does not guarantee selection for any opportunity.
+    A career counsellor can help you choose which ones to apply for.
+</p>
+{% endblock %}

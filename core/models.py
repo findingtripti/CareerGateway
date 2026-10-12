@@ -90,6 +90,8 @@ class Course(models.Model):
 
 
 class Opportunity(models.Model):
+    """Scholarship, internship, competition and similar (PDF section 10)."""
+
     OPPORTUNITY_TYPES = [
         ("SCHOLARSHIP", "Scholarship"),
         ("INTERNSHIP", "Internship"),
@@ -98,7 +100,14 @@ class Opportunity(models.Model):
         ("COURSE", "Skill Development Course"),
         ("WORKSHOP", "Workshop"),
         ("EXAM", "Entrance Exam"),
+        ("PROGRAM", "Career Program"),
         ("OTHER", "Other"),
+    ]
+    EDUCATION_CHOICES = [
+        ("", "Any education level"),
+        ("class_10", "Class 10 completed"),
+        ("class_12", "Class 12 completed"),
+        ("graduate", "Graduate (bachelor's degree)"),
     ]
 
     title = models.CharField(max_length=200)
@@ -108,11 +117,30 @@ class Opportunity(models.Model):
     )
     description = models.TextField()
     eligibility = models.TextField(blank=True)
+    min_education = models.CharField(
+        max_length=10, choices=EDUCATION_CHOICES, blank=True,
+        help_text="Lowest education level needed. Empty means any level.",
+    )
     location = models.CharField(max_length=150, blank=True)
     application_url = models.URLField(blank=True)
     deadline = models.DateField(null=True, blank=True)
+    related_careers = models.ManyToManyField(
+        "Career", blank=True, related_name="opportunities"
+    )
+
+    # Data quality
     is_verified = models.BooleanField(default=False)
+    last_verified = models.DateField(null=True, blank=True)
+    source_note = models.TextField(blank=True)
+    is_demo = models.BooleanField(
+        default=False,
+        help_text="Fictional record used for demonstration only.",
+    )
+    is_published = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["deadline", "title"]
 
     def __str__(self):
         return self.title

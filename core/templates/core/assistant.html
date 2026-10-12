@@ -238,6 +238,7 @@
             <a href="{% url 'profile' %}">My Profile</a>
             <a href="{% url 'careers' %}">Explore Careers</a>
             <a href="{% url 'colleges' %}">Colleges</a>
+            <a href="{% url 'opportunities' %}">Opportunities</a>
         </nav>
     </header>
 
@@ -267,6 +268,10 @@
                 <a href="{% url 'college_recommend' %}">course and college suggestions</a>
                 &middot;
                 <a href="{% url 'colleges' %}">browse all colleges</a>
+                &middot;
+                <a href="{% url 'opportunity_recommend' %}">scholarships and opportunities for me</a>
+                &middot;
+                <a href="{% url 'opportunities' %}">browse all opportunities</a>
             </p>
 
             {% if profile and profile.full_name %}

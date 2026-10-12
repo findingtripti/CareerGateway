@@ -1,0 +1,71 @@
+{% extends "core/base.html" %}
+
+{% block title %}Opportunities for you | Career Gateway{% endblock %}
+
+{% block extra_head %}{% include "core/_college_styles.html" %}{% endblock %}
+
+{% block content %}
+<h1>Opportunities matched to you</h1>
+<p>
+    A passed deadline or an education level below the requirement removes an
+    opportunity, and we tell you why. Location and career interests only
+    change the order.
+</p>
+
+{% if has_demo %}
+    <p class="banner">Some results are <strong>fictional</strong> demo records.</p>
+{% endif %}
+
+{% if not profile %}
+    <p class="banner info">
+        You have no saved profile yet. <a href="{% url 'profile' %}">Add your details</a>
+        so eligibility can be checked.
+    </p>
+{% else %}
+    <p class="muted">
+        Using: education {{ profile.current_education|default:"not set" }},
+        location {{ criteria.location|default:"not set" }}.
+        <a href="{% url 'profile' %}">Update profile</a>
+    </p>
+{% endif %}
+{% if education_unknown and profile %}
+    <p class="banner info">We could not tell your education level, so eligibility was not checked.</p>
+{% endif %}
+
+<h2>Worth a look</h2>
+{% for r in results %}
+    <article class="item-card">
+        <h3><a href="{% url 'opportunity_detail' r.opportunity.pk %}">{{ r.opportunity.title }}</a></h3>
+        <div class="badges">
+            <span class="badge">{{ r.opportunity.get_opportunity_type_display }}</span>
+            {% if r.status == "soon" %}<span class="badge warn">Closing soon</span>{% endif %}
+            {% if r.opportunity.is_demo %}<span class="badge demo">Demo (fictional)</span>{% endif %}
+            {% if r.stale %}<span class="badge warn">Information may be out of date</span>{% endif %}
+        </div>
+        <p><strong>Why it is shown</strong></p>
+        <ul class="reasons">{% for reason in r.reasons %}<li>{{ reason }}</li>{% endfor %}</ul>
+        {% if r.unknowns %}
+            <p><strong>Not known yet</strong></p>
+            <ul class="reasons unknowns">{% for note in r.unknowns %}<li>{{ note }}</li>{% endfor %}</ul>
+        {% endif %}
+    </article>
+{% empty %}
+    <p class="banner info">Nothing matches right now. See the reasons below.</p>
+{% endfor %}
+
+{% if excluded %}
+    <h2>Not shown as a match</h2>
+    {% for item in excluded %}
+        <article class="item-card">
+            <h3>{{ item.opportunity.title }}</h3>
+            <p>{{ item.reason }}</p>
+        </article>
+    {% endfor %}
+{% endif %}
+
+<div class="disclaimer">
+    These matches help you explore. Career Gateway does not guarantee selection,
+    and deadlines can change. A career counsellor can help you decide where to apply.
+    <a href="{% url 'opportunities' %}">Browse all opportunities</a>
+</div>
+{% endblock %}

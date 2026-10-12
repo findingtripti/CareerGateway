@@ -23,7 +23,12 @@ from .college_matching import (
     is_stale,
     recommend_courses,
 )
-from .models import Career, College, Course, StudentProfile
+from .models import Career, College, Course, Opportunity, StudentProfile
+from .opportunity_matching import (
+    deadline_status,
+    is_stale as opportunity_is_stale,
+    match_opportunities,
+)
 
 
 def home(request):
@@ -474,4 +479,76 @@ def college_recommend(request):
         "saved_location": saved_location,
         "has_demo": any(r["college"].is_demo for r in outcome["results"]),
         "education_unknown": criteria.education_level is None,
+    })
+
+
+def opportunities_list(request):
+    """Public list of published opportunities (PDF section 10)."""
+    items = Opportunity.objects.filter(is_published=True)
+
+    valid_types = dict(Opportunity.OPPORTUNITY_TYPES)
+    kind = request.GET.get("type", "")
+    if kind not in valid_types:
+        kind = ""
+    if kind:
+        items = items.filter(opportunity_type=kind)
+
+    query = request.GET.get("q", "").strip()[:100]
+    if query:
+        items = items.filter(
+            Q(title__icontains=query) | Q(description__icontains=query)
+            | Q(location__icontains=query)
+        )
+
+    rows = [
+        {
+            "opp": opp,
+            "status": deadline_status(opp.deadline),
+            "stale": opportunity_is_stale(opp),
+        }
+        for opp in items
+    ]
+    return render(request, "core/opportunities.html", {
+        "rows": rows,
+        "types": Opportunity.OPPORTUNITY_TYPES,
+        "kind": kind,
+        "query": query,
+        "has_demo": any(r["opp"].is_demo for r in rows),
+    })
+
+
+def opportunity_detail(request, pk):
+    opp = get_object_or_404(Opportunity, pk=pk, is_published=True)
+    return render(request, "core/opportunity_detail.html", {
+        "opp": opp,
+        "status": deadline_status(opp.deadline),
+        "stale": opportunity_is_stale(opp),
+        "careers": opp.related_careers.all(),
+    })
+
+
+@login_required(login_url="login")
+def opportunity_recommend(request):
+    """Explainable opportunity matches for the saved profile."""
+    profile = StudentProfile.objects.filter(user=request.user).first()
+    criteria = StudentCriteria(
+        budget=None,
+        education_level=detect_education_level(
+            profile.current_education if profile else ""
+        ),
+        location=profile.preferred_location if profile else "",
+        interest_text=build_profile_text(profile),
+    )
+    opportunities = (
+        Opportunity.objects.filter(is_published=True)
+        .prefetch_related("related_careers")
+    )
+    outcome = match_opportunities(list(opportunities), criteria)
+    return render(request, "core/opportunity_recommend.html", {
+        "profile": profile,
+        "results": outcome["results"],
+        "excluded": outcome["excluded"],
+        "criteria": criteria,
+        "education_unknown": criteria.education_level is None,
+        "has_demo": any(r["opportunity"].is_demo for r in outcome["results"]),
     })

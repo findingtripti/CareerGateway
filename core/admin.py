@@ -76,9 +76,33 @@ class OpportunityAdmin(admin.ModelAdmin):
         "opportunity_type",
         "deadline",
         "is_verified",
+        "last_verified",
+        "is_demo",
+        "is_published",
     )
     search_fields = ("title", "description")
-    list_filter = ("opportunity_type", "is_verified")
+    list_filter = (
+        "opportunity_type", "is_verified", "is_demo", "is_published",
+    )
+    filter_horizontal = ("related_careers",)
+    actions = ["mark_verified_today"]
+    fieldsets = (
+        (None, {"fields": ("title", "opportunity_type", "description",
+                           "is_published")}),
+        ("Eligibility and dates", {"fields": (
+            "eligibility", "min_education", "location", "deadline",
+            "application_url", "related_careers",
+        )}),
+        ("Data quality", {"fields": (
+            "is_verified", "last_verified", "source_note", "is_demo",
+        )}),
+    )
+
+    @admin.action(description="Mark selected opportunities as verified today")
+    def mark_verified_today(self, request, queryset):
+        updated = queryset.update(is_verified=True, last_verified=date.today())
+        self.message_user(request, f"{updated} opportunity(ies) marked as verified.")
+
 
 @admin.register(StudentProfile)
 class StudentProfileAdmin(admin.ModelAdmin):

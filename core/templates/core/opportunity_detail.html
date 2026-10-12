@@ -1,0 +1,48 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ opp.title }} | Career Gateway{% endblock %}
+
+{% block extra_head %}{% include "core/_college_styles.html" %}{% endblock %}
+
+{% block content %}
+<p><a href="{% url 'opportunities' %}">&larr; All opportunities</a></p>
+<h1>{{ opp.title }}</h1>
+{% include "core/_opp_badges.html" %}
+
+{% if opp.is_demo %}
+    <p class="banner">This is a <strong>fictional</strong> demo record.</p>
+{% endif %}
+{% if status == "expired" %}
+    <p class="banner info">The deadline for this opportunity has passed. Check the official page to see whether it opens again.</p>
+{% endif %}
+
+<p>{{ opp.description }}</p>
+
+<dl class="facts">
+    <dt>Deadline</dt>
+    <dd>{% if opp.deadline %}{{ opp.deadline|date:"j M Y" }}{% else %}Not listed{% endif %}</dd>
+    <dt>Education level needed</dt>
+    <dd>{% if opp.min_education %}{{ opp.get_min_education_display }}{% else %}Any level, or not stated{% endif %}</dd>
+    <dt>Location</dt>
+    <dd>{{ opp.location|default:"Not stated" }}</dd>
+    <dt>Eligibility</dt>
+    <dd>{{ opp.eligibility|default:"Not recorded yet." }}</dd>
+    {% if careers %}
+    <dt>Related careers</dt>
+    <dd>{% for career in careers %}<a href="{% url 'career_detail' career.slug %}">{{ career.title }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</dd>
+    {% endif %}
+</dl>
+
+{% if opp.application_url %}
+    <p><a class="button" href="{{ opp.application_url }}" rel="noopener noreferrer">Official page</a></p>
+{% endif %}
+
+<div class="disclaimer">
+    <strong>Data quality.</strong>
+    Last verified:
+    {% if opp.last_verified %}{{ opp.last_verified|date:"j M Y" }}{% else %}not recorded{% endif %}.
+    {% if opp.source_note %}Source: {{ opp.source_note }}{% endif %}
+    Confirm the deadline and rules on the official page before you apply.
+    Career Gateway does not guarantee selection.
+</div>
+{% endblock %}

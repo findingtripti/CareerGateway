@@ -63,10 +63,12 @@ STARTING_OPTIONS = [
         "key": "scholarships",
         "label": "Scholarships",
         "description": "Discover scholarships and other opportunities.",
-        "available": False,
+        "available": True,
+        "url_name": "opportunity_recommend",
         "response": (
-            "Scholarship and opportunity discovery needs eligibility and "
-            "deadline information. " + NOT_AVAILABLE_NOTE
+            "Opportunities are matched on your education level, location, "
+            "interests and the deadline. Open the matches to see why each "
+            "one is shown and which ones are closing soon."
         ),
     },
     {

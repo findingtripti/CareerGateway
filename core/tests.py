@@ -13,7 +13,15 @@ from .college_matching import (
     detect_education_level,
     recommend_courses,
 )
-from .models import Career, CareerFAQ, College, Course, StudentProfile
+from .models import (
+    Career,
+    CareerFAQ,
+    College,
+    Course,
+    Opportunity,
+    StudentProfile,
+)
+from .opportunity_matching import match_opportunities, deadline_status
 
 
 class PublicPageTests(TestCase):
@@ -387,7 +395,7 @@ class AssistantStartingOptionsTests(TestCase):
         self.assertContains(response, "okay")
 
     def test_unbuilt_feature_is_honest_and_never_claims_booking(self):
-        for topic in ("scholarships", "professional"):
+        for topic in ("professional",):
             response = self.get_assistant(topic)
             self.assertContains(response, "not available yet")
             self.assertNotContains(response, "has been booked")
@@ -984,3 +992,187 @@ class CollegeAdminTests(TestCase):
         college.refresh_from_db()
         self.assertTrue(college.is_verified)
         self.assertEqual(college.last_verified, date.today())
+
+
+def make_opp(title="Test Scholarship", kind="SCHOLARSHIP", days=30,
+             min_education="", location="", published=True, demo=False,
+             careers=(), description="A test opportunity."):
+    opp = Opportunity.objects.create(
+        title=title,
+        opportunity_type=kind,
+        description=description,
+        min_education=min_education,
+        location=location,
+        deadline=(date.today() + timedelta(days=days)) if days is not None else None,
+        is_published=published,
+        is_demo=demo,
+        is_verified=True,
+        last_verified=date.today(),
+    )
+    opp.related_careers.set(careers)
+    return opp
+
+
+class DeadlineStatusTests(TestCase):
+    def test_statuses(self):
+        today = date.today()
+        self.assertEqual(deadline_status(None, today), "none")
+        self.assertEqual(deadline_status(today - timedelta(days=1), today), "expired")
+        self.assertEqual(deadline_status(today, today), "soon")
+        self.assertEqual(deadline_status(today + timedelta(days=14), today), "soon")
+        self.assertEqual(deadline_status(today + timedelta(days=15), today), "open")
+
+
+class OpportunityMatchingTests(TestCase):
+    def match(self, opps=None, **kw):
+        opps = opps if opps is not None else list(Opportunity.objects.all())
+        return match_opportunities(opps, StudentCriteria(**kw))
+
+    def test_expired_opportunity_is_excluded_with_reason(self):
+        make_opp("Old Scholarship", days=-3)
+        out = self.match()
+        self.assertEqual(out["results"], [])
+        self.assertIn("deadline", out["excluded"][0]["reason"].lower())
+
+    def test_education_below_requirement_is_excluded(self):
+        make_opp("Grad Fellowship", kind="FELLOWSHIP", min_education="graduate")
+        out = self.match(education_level="class_12")
+        self.assertEqual(out["results"], [])
+
+    def test_unknown_education_is_flagged_not_excluded(self):
+        make_opp("Grad Fellowship", kind="FELLOWSHIP", min_education="graduate")
+        out = self.match(education_level=None)
+        self.assertEqual(len(out["results"]), 1)
+        self.assertTrue(out["results"][0]["unknowns"])
+
+    def test_no_deadline_is_flagged_unknown(self):
+        make_opp("Open Program", days=None)
+        out = self.match()
+        self.assertTrue(any("deadline" in n.lower() for n in out["results"][0]["unknowns"]))
+
+    def test_location_and_interest_only_reorder(self):
+        career = Career.objects.create(
+            title="Cybersecurity", slug="cybersecurity", summary="s",
+            what_professionals_do="a", required_education="a",
+            entrance_exams="a", important_skills="a", career_pathway="a",
+            possible_roles="a", higher_education_options="a",
+            work_environments="a", professional_insights="a",
+            keywords="security",
+        )
+        make_opp("A Generic", location="Chennai")
+        make_opp("B Security Camp", location="Pune", careers=[career])
+        out = self.match(location="Pune", interest_text="security")
+        self.assertEqual(out["results"][0]["opportunity"].title, "B Security Camp")
+        self.assertEqual(len(out["results"]), 2)
+
+    def test_closing_soon_is_flagged(self):
+        make_opp("Soon", days=5)
+        out = self.match()
+        self.assertEqual(out["results"][0]["status"], "soon")
+
+
+class OpportunityPagesTests(TestCase):
+    def setUp(self):
+        make_opp("Visible Scholarship", location="Pune")
+        make_opp("Hidden Item", published=False)
+        make_opp("Expired Item", days=-10)
+
+    def test_list_public_hides_unpublished(self):
+        r = self.client.get(reverse("opportunities"))
+        self.assertContains(r, "Visible Scholarship")
+        self.assertNotContains(r, "Hidden Item")
+
+    def test_expired_shown_with_label_in_list(self):
+        r = self.client.get(reverse("opportunities"))
+        self.assertContains(r, "Expired Item")
+        self.assertContains(r, "Deadline passed")
+
+    def test_filter_by_type(self):
+        make_opp("Summer Internship", kind="INTERNSHIP")
+        r = self.client.get(reverse("opportunities") + "?type=INTERNSHIP")
+        self.assertContains(r, "Summer Internship")
+        self.assertNotContains(r, "Visible Scholarship")
+
+    def test_invalid_type_is_ignored(self):
+        r = self.client.get(reverse("opportunities") + "?type=nonsense")
+        self.assertEqual(r.status_code, 200)
+
+    def test_demo_banner(self):
+        make_opp("Fiction", demo=True)
+        r = self.client.get(reverse("opportunities"))
+        self.assertContains(r, "fictional")
+
+    def test_detail_shows_data_quality(self):
+        opp = Opportunity.objects.get(title="Visible Scholarship")
+        r = self.client.get(reverse("opportunity_detail", args=[opp.pk]))
+        self.assertContains(r, "Last verified")
+        self.assertContains(r, "Confirm the deadline")
+
+    def test_unpublished_detail_404(self):
+        opp = Opportunity.objects.get(title="Hidden Item")
+        r = self.client.get(reverse("opportunity_detail", args=[opp.pk]))
+        self.assertEqual(r.status_code, 404)
+
+
+class OpportunityRecommendTests(TestCase):
+    def setUp(self):
+        user = User.objects.create_user("student1", password="StrongPass#123")
+        StudentProfile.objects.create(
+            user=user, current_education="Class 12 science",
+            preferred_location="Pune")
+        make_opp("Class12 Scholarship", min_education="class_12")
+        make_opp("Grad Fellowship", kind="FELLOWSHIP", min_education="graduate")
+        make_opp("Old One", days=-2)
+        self.client.login(username="student1", password="StrongPass#123")
+
+    def test_requires_login(self):
+        self.client.logout()
+        r = self.client.get(reverse("opportunity_recommend"))
+        self.assertEqual(r.status_code, 302)
+
+    def test_shows_matches_and_exclusions_with_reasons(self):
+        r = self.client.get(reverse("opportunity_recommend"))
+        self.assertContains(r, "Class12 Scholarship")
+        self.assertContains(r, "Grad Fellowship")
+        self.assertContains(r, "Old One")
+        self.assertContains(r, "deadline")
+
+    def test_page_never_promises_selection(self):
+        r = self.client.get(reverse("opportunity_recommend"))
+        self.assertContains(r, "does not guarantee selection")
+
+    def test_works_without_profile(self):
+        StudentProfile.objects.all().delete()
+        self.assertEqual(self.client.get(reverse("opportunity_recommend")).status_code, 200)
+
+
+class OpportunitySeedAndAdminTests(TestCase):
+    def test_seed_is_labelled_and_repeatable(self):
+        call_command("seed_demo_opportunities", verbosity=0)
+        n = Opportunity.objects.count()
+        self.assertGreaterEqual(n, 5)
+        self.assertFalse(Opportunity.objects.filter(is_demo=False).exists())
+        call_command("seed_demo_opportunities", verbosity=0)
+        self.assertEqual(Opportunity.objects.count(), n)
+
+    def test_admin_pages_and_action(self):
+        User.objects.create_superuser("boss", "b@example.com", "StrongPass#123")
+        self.client.login(username="boss", password="StrongPass#123")
+        opp = make_opp()
+        Opportunity.objects.filter(pk=opp.pk).update(is_verified=False, last_verified=None)
+        self.assertEqual(self.client.get("/admin/core/opportunity/").status_code, 200)
+        self.assertEqual(self.client.get(f"/admin/core/opportunity/{opp.pk}/change/").status_code, 200)
+        self.client.post("/admin/core/opportunity/", {
+            "action": "mark_verified_today", "_selected_action": [opp.pk]})
+        opp.refresh_from_db()
+        self.assertTrue(opp.is_verified)
+        self.assertEqual(opp.last_verified, date.today())
+
+
+class AssistantOpportunityLinkTests(TestCase):
+    def test_scholarship_option_is_available_and_linked(self):
+        User.objects.create_user("student1", password="StrongPass#123")
+        self.client.login(username="student1", password="StrongPass#123")
+        r = self.client.get(reverse("assistant"))
+        self.assertContains(r, reverse("opportunity_recommend"))
+        self.assertContains(r, reverse("opportunities"))
