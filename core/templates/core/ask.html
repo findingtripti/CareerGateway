@@ -24,7 +24,22 @@
     <p class="banner">Some results are <strong>fictional</strong> demo records.</p>
 {% endif %}
 
+{% if llm_on %}
+    <p class="muted">Your question text is sent to an AI model to write the answer. Please do not type personal details such as your name, phone number or address.</p>
+{% endif %}
+
 {% if searched %}
+    {% if answer %}
+        <section class="item-card" aria-label="Answer">
+            <span class="badge ok">AI-written answer</span>
+            <p>{{ answer.text }}</p>
+            <p class="muted">Written by {{ answer.provider|title }} using only the records listed below. It can still make mistakes, so confirm details on the official page.</p>
+        </section>
+    {% elif answer_note == "busy" %}
+        <p class="banner info">Many questions are being asked right now, so the written answer is paused for a minute. The matching records are shown below.</p>
+    {% elif answer_note == "unavailable" %}
+        <p class="banner info">The AI answer is not available at the moment. The matching records are shown below.</p>
+    {% endif %}
     {% for item in results %}
         <article class="item-card">
             <h2><a href="{{ item.url }}">{{ item.title }}</a></h2>

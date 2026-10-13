@@ -24,6 +24,8 @@ from .models import Career, College, KnowledgeEntry, Mentor, Opportunity
 
 MAX_RESULTS = 6
 SNIPPET_LENGTH = 240
+CONTEXT_LENGTH = 900  # longer passage handed to the language model
+CONTEXT_LENGTH = 800  # longer passage handed to the answer-writing model
 
 STOPWORDS = frozenset(
     "a an and are as at be but by can could do does for from how i in is it me "
@@ -162,6 +164,27 @@ def _snippet(body, matched):
     return " ".join(body.split())[:SNIPPET_LENGTH].rstrip()
 
 
+def _context(body, matched):
+    """A longer passage starting at the first sentence with a matched word.
+
+    The snippet is for people to skim; this is what the LLM is given.
+    """
+    flat = " ".join(body.split())
+    sentences = re.split(r"(?<=[.!?])\s+", flat)
+    for index, sentence in enumerate(sentences):
+        if matched & set(tokenize(sentence)):
+            return " ".join(sentences[index:])[:CONTEXT_LENGTH].rstrip()
+    return flat[:CONTEXT_LENGTH].rstrip()
+
+
+def _context(body, matched):
+    """A few sentences around the matched words, for the language model."""
+    sentences = re.split(r"(?<=[.!?])\s+", " ".join(body.split()))
+    picked = [s for s in sentences if matched & set(tokenize(s))][:4]
+    text = " ".join(picked) if picked else " ".join(body.split())
+    return text[:CONTEXT_LENGTH].rstrip()
+
+
 def retrieve(query, limit=MAX_RESULTS):
     """Return up to `limit` results for the question, best first.
 
@@ -198,6 +221,8 @@ def retrieve(query, limit=MAX_RESULTS):
             "title": doc["title"],
             "url": doc["url"],
             "snippet": _snippet(doc["body"], matched),
+            "context": _context(doc["body"], matched),
+            "context": _context(doc["body"], matched),
             "matched": sorted(matched),
             "score": score,
             "verified": doc["verified"],
