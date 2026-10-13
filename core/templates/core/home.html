@@ -173,6 +173,7 @@
             <a href="{% url 'colleges' %}">Colleges</a>
             <a href="{% url 'opportunities' %}">Opportunities</a>
             <a href="{% url 'mentors' %}">Mentors</a>
+            <a href="{% url 'ask' %}">Ask</a>
 
             {% if user.is_authenticated %}
                 <a href="{% url 'assistant' %}">Career Assistant</a>
@@ -321,5 +322,6 @@
             it does not replace professional career counselling.
         </p>
     </main>
+    {% include "core/_chat_widget.html" %}
 </body>
 </html>

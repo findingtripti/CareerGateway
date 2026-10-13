@@ -1,6 +1,6 @@
 
 from django.urls import path
-from . import views, views_leads
+from . import views, views_ask, views_leads
 
 urlpatterns = [
     path("", views.home, name="home"),
@@ -17,6 +17,9 @@ urlpatterns = [
     path("colleges/<int:pk>/enquire/", views_leads.college_enquiry, name="college_enquiry"),
     path("careers/<slug:slug>/enquire/", views_leads.career_enquiry, name="career_enquiry"),
     path("staff/leads/", views_leads.lead_dashboard, name="lead_dashboard"),
+    path("ask/", views_ask.ask, name="ask"),
+    path("ask/api/", views_ask.ask_api, name="ask_api"),
+    path("knowledge/<int:pk>/", views_ask.knowledge_detail, name="knowledge_detail"),
     path("mentors/", views.mentors_list, name="mentors"),
     path("mentors/<int:pk>/", views.mentor_detail, name="mentor_detail"),
     path("mentors/<int:pk>/request/", views_leads.mentor_request, name="mentor_request"),

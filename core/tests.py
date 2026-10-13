@@ -14,8 +14,10 @@ from .college_matching import (
     recommend_courses,
 )
 from .assistant_options import OPTIONS_BY_KEY
+from .retrieval import retrieve, tokenize
 from .handoff import SUGGESTED_MESSAGE, detect_triggers, triggers_for_options
 from .models import (
+    KnowledgeEntry,
     Lead,
     Mentor,
     Career,
@@ -1212,6 +1214,11 @@ class HandoffTriggerTests(TestCase):
             SUGGESTED_MESSAGE,
         )
 
+    def test_singular_and_plural_both_match(self):
+        self.assertIn("college_comparison", self.keys("please compare college for me"))
+        self.assertIn("college_comparison", self.keys("please compare colleges for me"))
+        self.assertIn("detailed_counselling", self.keys("my parent wants detailed counselling"))
+
     def test_whole_word_matching(self):
         self.assertEqual(self.keys("the apparent parentage"), [])
 
@@ -1624,3 +1631,201 @@ class HomeAndNavigationTests(TestCase):
     def test_timezone_is_india(self):
         from django.conf import settings
         self.assertEqual(settings.TIME_ZONE, "Asia/Kolkata")
+
+
+def make_entry(title="What is an entrance exam", kind="faq",
+               content="An entrance exam is a test used for admission.",
+               keywords="", published=True, verified=True, demo=False):
+    return KnowledgeEntry.objects.create(
+        title=title, entry_type=kind, content=content, keywords=keywords,
+        is_published=published, is_verified=verified, is_demo=demo,
+        last_verified=date.today())
+
+
+class TokenizeTests(TestCase):
+    def test_lowercases_and_drops_stopwords(self):
+        self.assertEqual(tokenize("What is the Fee?"), ["fee"])
+
+    def test_simple_plural_handling(self):
+        self.assertEqual(tokenize("scholarships"), tokenize("scholarship"))
+
+    def test_empty(self):
+        self.assertEqual(tokenize(""), [])
+        self.assertEqual(tokenize("   "), [])
+
+
+class RetrievalTests(TestCase):
+    def test_finds_knowledge_entry_with_source_and_snippet(self):
+        make_entry()
+        out = retrieve("entrance exam")
+        self.assertEqual(len(out), 1)
+        r = out[0]
+        self.assertEqual(r["kind"], "faq")
+        self.assertIn("entrance", r["matched"])
+        self.assertIn("test used for admission", r["snippet"])
+        self.assertTrue(r["url"])
+
+    def test_empty_or_stopword_only_query_returns_nothing(self):
+        make_entry()
+        self.assertEqual(retrieve(""), [])
+        self.assertEqual(retrieve("what is the"), [])
+
+    def test_unpublished_is_never_returned(self):
+        make_entry(published=False)
+        self.assertEqual(retrieve("entrance exam"), [])
+
+    def test_title_match_outranks_body_match(self):
+        make_entry("Hostel life", content="Notes about exam stress.")
+        make_entry("Exam preparation", content="General study tips.")
+        out = retrieve("exam")
+        self.assertEqual(out[0]["title"], "Exam preparation")
+
+    def test_searches_careers_colleges_opportunities_mentors(self):
+        make_career("Cybersecurity", "cybersecurity", "security")
+        make_college("Riverbend Institute", location="Pune")
+        make_opp("Summer Coding Internship", kind="INTERNSHIP")
+        make_mentor("Asha Mentor", "researcher")
+        kinds = {r["kind"] for r in retrieve("cybersecurity riverbend internship asha")}
+        self.assertEqual(kinds, {"career", "college", "opportunity", "mentor"})
+
+    def test_unverified_and_demo_records_are_labelled_not_hidden(self):
+        make_entry("Unchecked note", content="Admission letters vary.", verified=False, demo=True)
+        r = retrieve("admission letters")[0]
+        self.assertFalse(r["verified"])
+        self.assertTrue(r["demo"])
+
+    def test_unpublished_college_not_returned(self):
+        make_college("Hidden College", published=False)
+        self.assertEqual(retrieve("hidden"), [])
+
+    def test_career_faq_text_is_searchable(self):
+        career = make_career()
+        CareerFAQ.objects.create(career=career, question="Is there maths?", answer="Some statistics helps.")
+        out = retrieve("statistics")
+        self.assertEqual(out[0]["kind"], "career")
+
+    def test_results_are_capped(self):
+        for i in range(12):
+            make_entry(f"Exam note {i}", content="exam")
+        self.assertLessEqual(len(retrieve("exam")), 6)
+
+
+class AskPageTests(TestCase):
+    def test_page_is_public_and_shows_form(self):
+        r = self.client.get(reverse("ask"))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'name="q"')
+
+    def test_results_show_source_and_not_ai_knowledge_note(self):
+        make_entry()
+        r = self.client.get(reverse("ask") + "?q=entrance+exam")
+        self.assertContains(r, "What is an entrance exam")
+        self.assertContains(r, "Last verified")
+        self.assertContains(r, "not from general AI knowledge")
+
+    def test_no_result_is_honest_and_offers_counsellor(self):
+        r = self.client.get(reverse("ask") + "?q=zzzunknownzzz")
+        self.assertContains(r, "could not find")
+        self.assertContains(r, reverse("counsellor_request"))
+
+    def test_query_is_escaped(self):
+        r = self.client.get(reverse("ask") + "?q=%3Cscript%3Ealert(1)%3C/script%3E")
+        self.assertNotContains(r, "<script>alert(1)</script>")
+
+    def test_long_query_is_capped(self):
+        r = self.client.get(reverse("ask") + "?q=" + "a" * 5000)
+        self.assertEqual(r.status_code, 200)
+
+    def test_counsellor_trigger_in_question_is_suggested(self):
+        r = self.client.get(reverse("ask") + "?q=Please+compare+colleges+for+me")
+        self.assertContains(r, "college comparison")
+
+    def test_unverified_label_shown(self):
+        make_entry("Unchecked", content="Fee notes here.", verified=False)
+        r = self.client.get(reverse("ask") + "?q=fee+notes")
+        self.assertContains(r, "Not verified yet")
+
+    def test_demo_label_shown(self):
+        make_entry("Fiction", content="Fee notes here.", demo=True)
+        r = self.client.get(reverse("ask") + "?q=fee+notes")
+        self.assertContains(r, "fictional")
+
+
+class AskApiTests(TestCase):
+    def test_json_results(self):
+        make_entry()
+        r = self.client.get(reverse("ask_api") + "?q=entrance+exam")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r["Content-Type"], "application/json")
+        data = r.json()
+        self.assertEqual(data["results"][0]["title"], "What is an entrance exam")
+        self.assertIn("url", data["results"][0])
+
+    def test_json_includes_counsellor_suggestion(self):
+        data = self.client.get(reverse("ask_api") + "?q=compare+college+for+me").json()
+        self.assertIn("college comparison", data["handoff"])
+
+    def test_widget_script_renders_the_counsellor_suggestion(self):
+        r = self.client.get(reverse("home"))
+        self.assertContains(r, "data.handoff")
+
+    def test_json_without_query_is_empty(self):
+        data = self.client.get(reverse("ask_api")).json()
+        self.assertEqual(data["results"], [])
+
+    def test_json_only_allows_get(self):
+        self.assertEqual(self.client.post(reverse("ask_api")).status_code, 405)
+
+
+class ChatWidgetTests(TestCase):
+    def test_widget_and_nav_link_on_every_page(self):
+        for name in ("home", "careers", "colleges", "opportunities", "mentors"):
+            r = self.client.get(reverse(name))
+            self.assertContains(r, 'id="cg-chat"')
+            self.assertContains(r, reverse("ask_api"))
+
+    def test_widget_has_noscript_fallback_link(self):
+        r = self.client.get(reverse("colleges"))
+        self.assertContains(r, reverse("ask"))
+
+
+class KnowledgeEntryPagesTests(TestCase):
+    def test_detail_page_shows_quality_info(self):
+        e = make_entry()
+        r = self.client.get(reverse("knowledge_detail", args=[e.pk]))
+        self.assertContains(r, "Last verified")
+        self.assertContains(r, e.title)
+
+    def test_unpublished_detail_404(self):
+        e = make_entry(published=False)
+        self.assertEqual(self.client.get(reverse("knowledge_detail", args=[e.pk])).status_code, 404)
+
+    def test_entry_types_cover_pdf_section_13(self):
+        keys = {k for k, _ in KnowledgeEntry.ENTRY_TYPES}
+        for needed in ("faq", "course", "eligibility", "admission_process",
+                       "scholarship", "entrance_exam", "roadmap", "school_program"):
+            self.assertIn(needed, keys)
+
+
+class KnowledgeSeedAndAdminTests(TestCase):
+    def test_seed_is_repeatable_labelled_and_has_no_specific_dates_or_fees(self):
+        call_command("seed_knowledge", verbosity=0)
+        n = KnowledgeEntry.objects.count()
+        self.assertGreaterEqual(n, 8)
+        self.assertFalse(KnowledgeEntry.objects.filter(is_verified=True).exists())
+        call_command("seed_knowledge", verbosity=0)
+        self.assertEqual(KnowledgeEntry.objects.count(), n)
+        for entry in KnowledgeEntry.objects.all():
+            self.assertNotRegex(entry.content, r"\u20b9|\bRs\.?\s?\d|\b20\d\d\b")
+
+    def test_admin_pages_and_action(self):
+        User.objects.create_superuser("boss", "b@example.com", "StrongPass#123")
+        self.client.login(username="boss", password="StrongPass#123")
+        e = make_entry(verified=False)
+        self.assertEqual(self.client.get("/admin/core/knowledgeentry/").status_code, 200)
+        self.assertEqual(self.client.get(f"/admin/core/knowledgeentry/{e.pk}/change/").status_code, 200)
+        self.client.post("/admin/core/knowledgeentry/", {
+            "action": "mark_verified_today", "_selected_action": [e.pk]})
+        e.refresh_from_db()
+        self.assertTrue(e.is_verified)
+        self.assertEqual(e.last_verified, date.today())

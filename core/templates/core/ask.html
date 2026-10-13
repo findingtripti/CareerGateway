@@ -1,0 +1,68 @@
+{% extends "core/base.html" %}
+
+{% block title %}Ask Career Gateway{% endblock %}
+
+{% block extra_head %}{% include "core/_college_styles.html" %}{% endblock %}
+
+{% block content %}
+<h1>Ask Career Gateway</h1>
+<p>
+    Ask about careers, courses, colleges, admissions, scholarships or
+    entrance exams. Answers come from Career Gateway records, not from
+    general AI knowledge, and every result shows where it came from.
+</p>
+
+<form method="get" class="filter-form" role="search">
+    <div class="form-field">
+        <label for="q">Your question</label>
+        <input id="q" name="q" type="text" value="{{ query }}" maxlength="200" placeholder="For example: how do scholarships work?">
+    </div>
+    <button class="button" type="submit">Ask</button>
+</form>
+
+{% if has_demo %}
+    <p class="banner">Some results are <strong>fictional</strong> demo records.</p>
+{% endif %}
+
+{% if searched %}
+    {% for item in results %}
+        <article class="item-card">
+            <h2><a href="{{ item.url }}">{{ item.title }}</a></h2>
+            <div class="badges">
+                <span class="badge">{{ item.kind_label }}</span>
+                {% if item.verified %}<span class="badge ok">Verified</span>{% else %}<span class="badge warn">Not verified yet</span>{% endif %}
+                {% if item.demo %}<span class="badge demo">Demo (fictional)</span>{% endif %}
+            </div>
+            <p>{{ item.snippet }}</p>
+            <p class="muted">
+                Matched: {{ item.matched|join:", " }}.
+                Last verified:
+                {% if item.last_verified %}{{ item.last_verified|date:"j M Y" }}{% else %}not recorded{% endif %}.
+            </p>
+        </article>
+    {% empty %}
+        <p class="banner info">
+            We could not find this in Career Gateway's information, and we will
+            not guess. Try different words, or ask a career counsellor.
+            <a href="{% url 'counsellor_request' %}">Request a counsellor</a>
+        </p>
+    {% endfor %}
+
+    {% if handoff %}
+        <div class="banner info">
+            <strong>A counsellor can help here.</strong>
+            {% for item in handoff %}
+                <p>{{ item.message }}</p>
+                <p class="muted">Why we are suggesting this: {{ item.label }}.</p>
+            {% endfor %}
+            <a href="{% url 'counsellor_request' %}?trigger={{ handoff.0.key }}">Request a counsellor</a>
+        </div>
+    {% endif %}
+{% endif %}
+
+<p class="disclaimer">
+    These results are stored information, not personal advice. Confirm dates,
+    fees and rules on the official page before you decide. The assistant does
+    not replace a professional career counsellor.
+</p>
+{% endblock %}

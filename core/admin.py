@@ -7,6 +7,7 @@ from .models import (
     CareerFAQ,
     College,
     Course,
+    KnowledgeEntry,
     Lead,
     Mentor,
     Opportunity,
@@ -226,3 +227,23 @@ class MentorAdmin(admin.ModelAdmin):
     def mark_verified_today(self, request, queryset):
         n = queryset.update(is_verified=True, last_verified=date.today())
         self.message_user(request, f"{n} mentor(s) marked as verified.")
+
+
+@admin.register(KnowledgeEntry)
+class KnowledgeEntryAdmin(admin.ModelAdmin):
+    list_display = ("title", "entry_type", "is_verified", "last_verified",
+                    "is_demo", "is_published")
+    list_filter = ("entry_type", "is_verified", "is_demo", "is_published")
+    search_fields = ("title", "content", "keywords")
+    actions = ["mark_verified_today"]
+    fieldsets = (
+        (None, {"fields": ("title", "entry_type", "content", "keywords",
+                           "is_published")}),
+        ("Data quality", {"fields": ("is_verified", "last_verified",
+                                     "source_note", "source_url", "is_demo")}),
+    )
+
+    @admin.action(description="Mark selected entries as verified today")
+    def mark_verified_today(self, request, queryset):
+        n = queryset.update(is_verified=True, last_verified=date.today())
+        self.message_user(request, f"{n} entry(ies) marked as verified.")

@@ -73,9 +73,18 @@ DEFAULT_MESSAGE = (
 )
 
 
+def _stem(word):
+    if len(word) > 3 and word.endswith("s") and not word.endswith("ss"):
+        return word[:-1]
+    return word
+
+
 def _normalise(text):
-    text = (text or "").lower().replace("'", "").replace("’", "")
-    return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9 ]", " ", text)).strip()
+    """Lowercase, drop punctuation and apostrophes, and treat a plural like
+    its singular, so "compare college" matches "compare colleges"."""
+    text = (text or "").lower().replace("'", "").replace("\u2019", "")
+    words = re.sub(r"[^a-z0-9 ]", " ", text).split()
+    return " ".join(_stem(w) for w in words)
 
 
 def _with_message(trigger):
@@ -88,7 +97,8 @@ def detect_triggers(text):
     found = []
     for trigger in TRIGGERS:
         for phrase in trigger["phrases"]:
-            if re.search(r"(?<![a-z0-9])" + re.escape(phrase) + r"(?![a-z0-9])", text):
+            pattern = re.escape(_normalise(phrase))
+            if re.search(r"(?<![a-z0-9])" + pattern + r"(?![a-z0-9])", text):
                 found.append(_with_message(trigger))
                 break
     return found

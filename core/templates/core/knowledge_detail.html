@@ -1,0 +1,25 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ entry.title }} | Career Gateway{% endblock %}
+
+{% block extra_head %}{% include "core/_college_styles.html" %}{% endblock %}
+
+{% block content %}
+<p><a href="{% url 'ask' %}">&larr; Ask a question</a></p>
+<h1>{{ entry.title }}</h1>
+<div class="badges">
+    <span class="badge">{{ entry.get_entry_type_display }}</span>
+    {% if entry.is_verified %}<span class="badge ok">Verified</span>{% else %}<span class="badge warn">Not verified yet</span>{% endif %}
+    {% if entry.is_demo %}<span class="badge demo">Demo (fictional)</span>{% endif %}
+</div>
+<p>{{ entry.content }}</p>
+
+<div class="disclaimer">
+    <strong>About this information.</strong>
+    Last verified:
+    {% if entry.last_verified %}{{ entry.last_verified|date:"j M Y" }}{% else %}not recorded{% endif %}.
+    {% if entry.source_note %}{{ entry.source_note }}{% endif %}
+    {% if entry.source_url %}<a href="{{ entry.source_url }}" rel="noopener noreferrer">Source</a>{% endif %}
+    Dates, fees and rules change, so confirm them on the official page.
+</div>
+{% endblock %}

@@ -327,6 +327,53 @@ class Mentor(models.Model):
         return self.name
 
 
+class KnowledgeEntry(models.Model):
+    """Controlled knowledge base entry (PDF section 13) for the content types
+    that do not already live in their own tables: FAQs, course information,
+    eligibility, admission processes, scholarships, entrance exams, career
+    roadmaps and school programs. Careers, colleges, opportunities and
+    mentors are searched from their own tables."""
+
+    ENTRY_TYPES = [
+        ("faq", "Frequently asked question"),
+        ("course", "Course information"),
+        ("eligibility", "Eligibility requirements"),
+        ("admission_process", "Admission process"),
+        ("scholarship", "Scholarship information"),
+        ("entrance_exam", "Entrance examination"),
+        ("roadmap", "Career roadmap"),
+        ("school_program", "School program"),
+    ]
+
+    title = models.CharField(max_length=200)
+    entry_type = models.CharField(max_length=20, choices=ENTRY_TYPES, default="faq")
+    content = models.TextField()
+    keywords = models.TextField(
+        blank=True, help_text="Comma-separated extra search words."
+    )
+
+    # Data quality
+    is_verified = models.BooleanField(default=False)
+    last_verified = models.DateField(null=True, blank=True)
+    source_note = models.TextField(blank=True)
+    source_url = models.URLField(blank=True)
+    is_demo = models.BooleanField(default=False)
+    is_published = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["title"]
+        verbose_name = "knowledge entry"
+        verbose_name_plural = "knowledge entries"
+
+    def __str__(self):
+        return self.title
+
+    @property
+    def keyword_list(self):
+        return [w.strip().lower() for w in self.keywords.split(",") if w.strip()]
+
+
 class Lead(models.Model):
     """One student enquiry or request that the team follows up (PDF
     sections 8 and 14). Together these records form the lead journey shown

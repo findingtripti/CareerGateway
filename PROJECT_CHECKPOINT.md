@@ -144,3 +144,12 @@ The tests lock in CURRENT behaviour, not ideal behaviour. For example, profile f
 - Home page now uses the same links as the rest of the site (it had its own older navbar). TIME_ZONE changed to Asia/Kolkata (dashboard times were shown in UTC).
 - Tests: 185 passing in the build sandbox.
 - Next: M8 knowledge base and retrieval answers (sec 13), M9 school version (sec 11), M10 wrap-up.
+
+## 17. Milestone 8 - Knowledge base and "Ask Career Gateway" (PDF sections 13, 2, 16) [REQ-13, 02.8, 16 (chat widget)]
+- `KnowledgeEntry` model (migration 0010) covers the PDF section 13 types that have no table of their own: FAQs, course information, eligibility, admission processes, scholarships, entrance exams, career roadmaps, school programs. Careers, colleges, opportunities and mentors are searched from their own tables.
+- `core/retrieval.py` is the retrieval step of the PDF's RAG pattern: word-overlap ranking over published records, with title > keyword > body weighting. Every result shows its source record, the matched words, a verified or not-verified label, a demo label and the last-verified date. Nothing is generated.
+- IMPLEMENTATION DECISION: no LLM and no embeddings yet (needs an API key and cost). FUTURE: an LLM could rewrite the retrieved passages, but must answer only from them.
+- /ask/ page, /ask/api/ JSON endpoint and a floating chat widget on every page (plain JavaScript, works without JavaScript through a link). No result means "we could not find this and will not guess", with a counsellor link. Counsellor triggers in the question are suggested.
+- `seed_knowledge` adds 10 general entries with no dates, fees or college rules, all marked NOT verified, with a note that a counsellor must review them.
+- Tests: 215 passing in the build sandbox.
+- Next: M9 school version with minor-privacy rules (sec 11), M10 wrap-up (README, viva notes, architecture sec 12, PostgreSQL setting, notifications, final tests).
