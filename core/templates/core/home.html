@@ -173,13 +173,14 @@
             <a href="{% url 'colleges' %}">Colleges</a>
             <a href="{% url 'opportunities' %}">Opportunities</a>
             <a href="{% url 'mentors' %}">Mentors</a>
+            <a href="{% url 'school' %}">Schools</a>
             <a href="{% url 'ask' %}">Ask</a>
 
             {% if user.is_authenticated %}
                 <a href="{% url 'assistant' %}">Career Assistant</a>
                 <a href="{% url 'my_requests' %}">My Requests</a>
                 <a href="{% url 'profile' %}">My Profile</a>
-                {% if user.is_staff %}<a href="{% url 'lead_dashboard' %}">Lead Dashboard</a>{% endif %}
+                {% if user.is_staff %}<a href="{% url 'lead_dashboard' %}">Lead Dashboard</a><a href="{% url 'school_dashboard' %}">School Dashboard</a>{% endif %}
             {% else %}
                 <a href="{% url 'login' %}">Log In</a>
             {% endif %}

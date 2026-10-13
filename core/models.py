@@ -471,3 +471,69 @@ class Lead(models.Model):
 
     def __str__(self):
         return f"{self.get_lead_type_display()} - {self.name or self.user or 'unknown'}"
+
+
+class SchoolProgram(models.Model):
+    """A school-facing program or workshop (PDF section 11: program and
+    workshop management). It is a listing only: it does not book anything."""
+
+    PROGRAM_TYPES = [
+        ("assessment", "Career assessment session"),
+        ("workshop", "Workshop"),
+        ("career_talk", "Career talk"),
+        ("counselling_camp", "Counselling session"),
+        ("mentor_session", "Mentor session"),
+    ]
+
+    title = models.CharField(max_length=200)
+    program_type = models.CharField(max_length=20, choices=PROGRAM_TYPES, default="workshop")
+    description = models.TextField(blank=True)
+    event_date = models.DateField()
+    location = models.CharField(max_length=150, blank=True)
+    is_published = models.BooleanField(default=False)
+    is_demo = models.BooleanField(
+        default=False, help_text="Fictional demonstration program."
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["event_date", "title"]
+
+    def __str__(self):
+        return self.title
+
+    @property
+    def is_open(self):
+        from datetime import date
+        return self.event_date >= date.today()
+
+
+class SchoolRegistration(models.Model):
+    """A student's interest in a school program.
+
+    Privacy design for minors (PDF section 11): this record deliberately
+    holds no phone number, email address or home address. Under-18 students
+    must have a parent or guardian consent recorded. Staff dashboards show
+    counts only; individual records are visible in the admin to staff."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name="school_registrations",
+    )
+    program = models.ForeignKey(
+        SchoolProgram, on_delete=models.CASCADE, related_name="registrations"
+    )
+    school_name = models.CharField(max_length=150)
+    is_under_18 = models.BooleanField(default=False)
+    guardian_consent = models.BooleanField(default=False)
+    consent_given = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["user", "program"], name="one_registration_per_program"),
+        ]
+
+    def __str__(self):
+        return f"Registration {self.pk} for {self.program}"

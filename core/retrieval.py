@@ -31,6 +31,14 @@ STOPWORDS = frozenset(
     "which who why will with you your about want need tell please".split()
 )
 
+# Words that describe the whole site. A record that matches only one of these
+# in its body says little about the question, so it is ranked lower.
+GENERIC_WORDS = frozenset(
+    "college course career student school opportunity mentor information "
+    "help exam program".split()
+)
+GENERIC_WEIGHT = 0.3
+
 KIND_LABELS = {
     "career": "Career",
     "college": "College",
@@ -172,7 +180,12 @@ def retrieve(query, limit=MAX_RESULTS):
         matched = title_hits | keyword_hits | body_hits
         if not matched:
             continue
-        score = 3 * len(title_hits) + 2 * len(keyword_hits) + len(body_hits)
+        score = (
+            3 * len(title_hits)
+            + 2 * len(keyword_hits - GENERIC_WORDS) + GENERIC_WEIGHT * len(keyword_hits & GENERIC_WORDS)
+            + len(body_hits - GENERIC_WORDS) + GENERIC_WEIGHT * len(body_hits & GENERIC_WORDS)
+        )
+        score = round(score, 2)
         scored.append((score, doc, matched))
 
     scored.sort(key=lambda item: (-item[0], item[1]["title"].lower()))

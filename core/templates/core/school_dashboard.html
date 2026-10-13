@@ -1,0 +1,38 @@
+{% extends "core/base.html" %}
+
+{% block title %}School dashboard | Career Gateway{% endblock %}
+
+{% block extra_head %}{% include "core/_college_styles.html" %}{% endblock %}
+
+{% block content %}
+<h1>School participation dashboard</h1>
+<p class="banner info">
+    Counts only. Student names and contact details are not shown here, to
+    protect minors. Individual records are in the admin area for authorised staff.
+</p>
+<p><strong>{{ total_registrations }}</strong> registrations, of which <strong>{{ total_minors }}</strong> from students under 18.</p>
+
+<h2>By program</h2>
+<table class="data">
+    <thead><tr><th>Program</th><th>Date</th><th>Registrations</th><th>Under 18</th></tr></thead>
+    <tbody>
+    {% for p in programs %}
+        <tr><td>{{ p.title }}</td><td>{{ p.event_date|date:"j M Y" }}</td><td>{{ p.total }}</td><td>{{ p.minors }}</td></tr>
+    {% empty %}
+        <tr><td colspan="4">No programs yet.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<h2>By school</h2>
+<table class="data">
+    <thead><tr><th>School</th><th>Registrations</th><th>Under 18</th></tr></thead>
+    <tbody>
+    {% for s in by_school %}
+        <tr><td>{{ s.school_name }}</td><td>{{ s.total }}</td><td>{{ s.minors }}</td></tr>
+    {% empty %}
+        <tr><td colspan="3">No registrations yet.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -247,3 +247,25 @@ class KnowledgeEntryAdmin(admin.ModelAdmin):
     def mark_verified_today(self, request, queryset):
         n = queryset.update(is_verified=True, last_verified=date.today())
         self.message_user(request, f"{n} entry(ies) marked as verified.")
+
+
+from .models import SchoolProgram, SchoolRegistration  # noqa: E402
+
+
+@admin.register(SchoolProgram)
+class SchoolProgramAdmin(admin.ModelAdmin):
+    list_display = ("title", "program_type", "event_date", "is_published", "is_demo")
+    list_filter = ("program_type", "is_published", "is_demo")
+    search_fields = ("title", "description")
+
+
+@admin.register(SchoolRegistration)
+class SchoolRegistrationAdmin(admin.ModelAdmin):
+    list_display = ("program", "school_name", "is_under_18", "guardian_consent", "created_at")
+    list_filter = ("program", "is_under_18")
+    search_fields = ("school_name",)
+    readonly_fields = ("user", "program", "school_name", "is_under_18",
+                       "guardian_consent", "consent_given", "created_at")
+
+    def has_add_permission(self, request):
+        return False

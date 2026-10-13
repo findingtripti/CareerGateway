@@ -1,0 +1,52 @@
+{% extends "core/base.html" %}
+
+{% block title %}Schools | Career Gateway{% endblock %}
+
+{% block extra_head %}{% include "core/_college_styles.html" %}{% endblock %}
+
+{% block content %}
+<h1>Career Gateway for schools</h1>
+<p>
+    Tools for school students and teachers to explore careers early.
+    Everything below is a way to explore and ask for help. This page
+    <strong>does not book</strong> sessions or seats; registering only records
+    your interest for the school team.
+</p>
+
+<h2>What students can do</h2>
+<div class="item-card">
+    <ul>
+        <li><a href="{% url 'assistant' %}">Career Assistant</a>: answer a few questions and see career ideas with the reasons shown (an exploration activity, not a test of suitability).</li>
+        <li><a href="{% url 'careers' %}">Explore careers</a>: read what professionals do and what is needed.</li>
+        <li><a href="{% url 'mentors' %}">Mentors</a>: see working professionals and send a request.</li>
+        <li><a href="{% url 'opportunities' %}">Opportunities</a>: programs, competitions and internships to look at.</li>
+        <li><a href="{% url 'counsellor_request' %}">Request a counsellor</a>: ask a person for help with personal decisions.</li>
+    </ul>
+</div>
+
+<div class="banner info">
+    <strong>For students under 18:</strong> we keep this simple. Registering
+    for a program asks only for your school name and a parent or guardian
+    consent. We take no phone number, email or address for school programs,
+    and the staff dashboard shows only counts.
+</div>
+
+<h2>Upcoming school programs</h2>
+{% if has_demo %}
+    <p class="banner">Programs marked demo are <strong>fictional</strong> examples written by the project team.</p>
+{% endif %}
+{% for program in programs %}
+    <div class="item-card">
+        <h3>{{ program.title }}{% if program.is_demo %} <small>(fictional demo)</small>{% endif %}</h3>
+        <p><strong>{{ program.get_program_type_display }}</strong> &middot; {{ program.event_date|date:"j M Y" }}{% if program.location %} &middot; {{ program.location }}{% endif %}</p>
+        {% if program.description %}<p>{{ program.description }}</p>{% endif %}
+        {% if program.is_open %}
+            <a class="button" href="{% url 'school_register' program.pk %}">Register interest</a>
+        {% else %}
+            <p><em>This program has already taken place.</em></p>
+        {% endif %}
+    </div>
+{% empty %}
+    <p>No school programs are listed yet.</p>
+{% endfor %}
+{% endblock %}

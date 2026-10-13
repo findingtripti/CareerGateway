@@ -153,3 +153,14 @@ The tests lock in CURRENT behaviour, not ideal behaviour. For example, profile f
 - `seed_knowledge` adds 10 general entries with no dates, fees or college rules, all marked NOT verified, with a note that a counsellor must review them.
 - Tests: 215 passing in the build sandbox.
 - Next: M9 school version with minor-privacy rules (sec 11), M10 wrap-up (README, viva notes, architecture sec 12, PostgreSQL setting, notifications, final tests).
+
+## 18. Milestone 9 - School version, widget fixes, ranking (PDF section 11) [REQ-11]
+- `SchoolProgram` and `SchoolRegistration` (migration 0011). Programs are listings of assessment sessions, workshops, career talks, counselling sessions and mentor sessions. Registration records interest only; nothing is booked.
+- MINOR PRIVACY (PDF section 11): registration holds no phone, email or address, only the school name and consent flags. A student who says they are under 18 must tick parent or guardian consent. The staff dashboard (/staff/school/, staff only) shows counts by program and school, never names or contacts. Individual rows are read-only in the admin.
+- Pages: /school/ (public overview linking assistant, careers, mentors, opportunities, counsellor request), /school/<id>/register/ (login needed), /staff/school/. "Schools" added to the navbar.
+- `seed_demo_school_programs` adds 3 FICTIONAL programs.
+- Honest scope: the "career assessment" is the existing Career Assistant (an exploration activity, not a psychometric test). No bulk school onboarding or teacher accounts yet (future work).
+- Chat widget: panel opens above the button; typing clears the old answer; "You asked: ..." line; Clear button; a request counter ignores late replies to older questions.
+- Retrieval ranking: generic site words (college, course, career, ...) now count 0.3 instead of 1 in body/keyword matches, so records that match only a generic word rank below records matching a specific word. Titles still count 3.
+- Tests: 250 passing in the build sandbox.
+- Next: M10 wrap-up (README, viva notes, architecture sec 12, PostgreSQL setting, notifications, final tests).

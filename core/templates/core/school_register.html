@@ -1,0 +1,47 @@
+{% extends "core/base.html" %}
+
+{% block title %}Register interest | Career Gateway{% endblock %}
+
+{% block extra_head %}{% include "core/_college_styles.html" %}{% endblock %}
+
+{% block content %}
+<h1>Register interest: {{ program.title }}</h1>
+<p>{{ program.get_program_type_display }} &middot; {{ program.event_date|date:"j M Y" }}</p>
+<p class="banner info">
+    This records your interest only; nothing is booked. We collect
+    no phone number, email or address here, only your school name and consent.
+    If you are under 18, a parent or guardian must agree.
+</p>
+
+{% if existing %}
+    <p class="banner">You have already registered your interest in this program.</p>
+{% else %}
+<form method="post">
+    {% csrf_token %}
+    <div class="form-field">
+        <label for="school_name">School name</label>
+        <input id="school_name" name="school_name" type="text" maxlength="150" value="{{ values.school_name }}" style="width:100%;padding:10px 12px;border:1px solid #b9c3d9;border-radius:6px;font-size:16px;">
+    </div>
+    <div class="form-field">
+        <label style="font-weight:normal;display:flex;gap:10px;align-items:flex-start;">
+            <input name="is_under_18" type="checkbox" value="1" style="width:auto;margin-top:4px;" {% if values.is_under_18 %}checked{% endif %}>
+            <span>I am under 18.</span>
+        </label>
+    </div>
+    <div class="form-field">
+        <label style="font-weight:normal;display:flex;gap:10px;align-items:flex-start;">
+            <input name="guardian_consent" type="checkbox" value="1" style="width:auto;margin-top:4px;" {% if values.guardian_consent %}checked{% endif %}>
+            <span>My parent or guardian agrees that I may register (needed if you are under 18).</span>
+        </label>
+    </div>
+    <div class="form-field">
+        <label style="font-weight:normal;display:flex;gap:10px;align-items:flex-start;">
+            <input name="consent" type="checkbox" value="1" style="width:auto;margin-top:4px;">
+            <span>I agree that the school team may record my interest in this program.</span>
+        </label>
+    </div>
+    <button class="button" type="submit">Register interest</button>
+    <a href="{% url 'school' %}">Back</a>
+</form>
+{% endif %}
+{% endblock %}
