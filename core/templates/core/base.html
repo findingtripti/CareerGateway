@@ -173,15 +173,53 @@
                 padding: 14px 16px;
             }
         }
+
+        /* ---- M10 UI refresh: tokens, nicer base, responsive menu ---- */
+        :root {
+            --cg-primary: #243b6b;
+            --cg-primary-soft: #3a548a;
+            --cg-accent: #f5a623;
+            --cg-bg: #f4f6fb;
+            --cg-surface: #ffffff;
+            --cg-border: #d5dcf0;
+            --cg-text: #1f2937;
+            --cg-muted: #55607a;
+            --cg-radius: 12px;
+        }
+        body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: var(--cg-bg); color: var(--cg-text); }
+        .navbar { position: sticky; top: 0; z-index: 40; background: linear-gradient(90deg, #1d3159, var(--cg-primary)); box-shadow: 0 2px 10px rgba(0,0,0,.15); }
+        .nav-toggle { display: none; background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.5); border-radius: 8px; padding: 8px 12px; font-size: 15px; cursor: pointer; }
+        .container { max-width: 1000px; border-radius: 16px; }
+        .button { text-decoration: none; transition: background .15s, transform .05s; }
+        .button:hover { background: var(--cg-primary-soft); }
+        .button:active { transform: translateY(1px); }
+        a { color: var(--cg-primary); }
+        table.data { width: 100%; border-collapse: collapse; margin: 10px 0 20px; font-size: 15px; }
+        table.data th, table.data td { padding: 10px 12px; border-bottom: 1px solid #e3e8f5; text-align: left; vertical-align: top; }
+        table.data thead th { background: #eef2fb; color: var(--cg-primary); font-size: 13px; text-transform: uppercase; letter-spacing: .03em; }
+        table.data tbody tr:nth-child(even) { background: #f8f9fd; }
+        @media (max-width: 960px) {
+            .nav-toggle { display: inline-block; }
+            .js .nav-links { display: none; width: 100%; flex-direction: column; align-items: stretch; gap: 2px; }
+            .js .nav-links.open { display: flex; }
+            .js .nav-links a { padding: 12px; font-size: 16px; }
+            .navbar { align-items: center; }
+        }
+        @media (max-width: 650px) {
+            table.data { display: block; overflow-x: auto; white-space: nowrap; }
+        }
+        @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
     </style>
+    <script>document.documentElement.classList.add('js');</script>
     {% block extra_head %}{% endblock %}
 </head>
 
 <body>
     <nav class="navbar" aria-label="Main navigation">
         <a class="brand" href="{% url 'home' %}">Career Gateway</a>
+        <button type="button" class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="nav-links">Menu</button>
 
-        <div class="nav-links">
+        <div class="nav-links" id="nav-links">
             <a href="{% url 'home' %}">Home</a>
             <a href="{% url 'careers' %}">Explore Careers</a>
             <a href="{% url 'colleges' %}">Colleges</a>
@@ -214,5 +252,16 @@
         {% block content %}{% endblock %}
     </main>
     {% include "core/_chat_widget.html" %}
+    <script>
+        (function () {
+            var btn = document.getElementById("nav-toggle");
+            var links = document.getElementById("nav-links");
+            if (!btn || !links) { return; }
+            btn.addEventListener("click", function () {
+                var open = links.classList.toggle("open");
+                btn.setAttribute("aria-expanded", String(open));
+            });
+        })();
+    </script>
 </body>
 </html>

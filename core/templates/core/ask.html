@@ -2,47 +2,65 @@
 
 {% block title %}Ask Career Gateway{% endblock %}
 
-{% block extra_head %}{% include "core/_college_styles.html" %}{% endblock %}
+{% block extra_head %}{% include "core/_college_styles.html" %}
+<style>
+    .ask-hero { background: linear-gradient(135deg, #eef3ff, #f8f5ff); border: 1px solid var(--cg-border); border-radius: 14px; padding: 20px; margin-bottom: 18px; }
+    .ask-hero h1 { margin-bottom: 6px; }
+    .ask-form { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .ask-form input { flex: 1 1 260px; padding: 13px 14px; border: 1px solid #b9c3d9; border-radius: 10px; font-size: 16px; }
+    .ask-form .button { padding: 13px 22px; border-radius: 10px; }
+    .you-asked { color: var(--cg-muted); font-style: italic; margin: 18px 0 8px; word-break: break-word; }
+    .answer-card { border: 1px solid #b8c7ee; background: #f4f7ff; border-radius: 14px; padding: 18px; margin: 8px 0 18px; box-shadow: 0 2px 8px rgba(36,59,107,.08); }
+    .answer-card .answer-text { font-size: 17px; line-height: 1.7; margin: 8px 0; white-space: pre-wrap; word-break: break-word; }
+    .answer-label { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; background: var(--cg-primary); color: #fff; padding: 3px 10px; border-radius: 999px; }
+    .sources-title { margin: 22px 0 4px; font-size: 18px; color: var(--cg-primary); }
+    .src-no { display: inline-block; min-width: 26px; text-align: center; background: #e5e9f6; color: var(--cg-primary); border-radius: 6px; font-weight: 700; font-size: 13px; margin-right: 6px; padding: 1px 6px; }
+    .privacy-note { font-size: 13px; color: var(--cg-muted); margin: 10px 0 0; }
+    @media (max-width: 650px) { .ask-hero { padding: 16px; } .ask-form .button { width: 100%; } }
+</style>
+{% endblock %}
 
 {% block content %}
-<h1>Ask Career Gateway</h1>
-<p>
-    Ask about careers, courses, colleges, admissions, scholarships or
-    entrance exams. Answers come from Career Gateway records, not from
-    general AI knowledge, and every result shows where it came from.
-</p>
-
-<form method="get" class="filter-form" role="search">
-    <div class="form-field">
-        <label for="q">Your question</label>
-        <input id="q" name="q" type="text" value="{{ query }}" maxlength="200" placeholder="For example: how do scholarships work?">
-    </div>
-    <button class="button" type="submit">Ask</button>
-</form>
-
-{% if has_demo %}
-    <p class="banner">Some results are <strong>fictional</strong> demo records.</p>
-{% endif %}
-
-{% if llm_on %}
-    <p class="muted">Your question text is sent to an AI model to write the answer. Please do not type personal details such as your name, phone number or address.</p>
-{% endif %}
+<section class="ask-hero">
+    <h1>Ask Career Gateway</h1>
+    <p>
+        Ask about careers, courses, colleges, admissions, scholarships or
+        entrance exams. Answers are built only from Career Gateway records,
+        and every record used is listed below the answer.
+    </p>
+    <form method="get" class="ask-form" role="search">
+        <label for="q" class="visually-hidden" style="position:absolute;left:-9999px;">Your question</label>
+        <input id="q" name="q" type="text" value="{{ query }}" maxlength="200" placeholder="For example: how do scholarships work?" autocomplete="off">
+        <button class="button" type="submit">Ask</button>
+    </form>
+    {% if llm_on %}
+        <p class="privacy-note">Your question text is sent to an AI model to write the answer. Please do not type personal details such as your name, phone number or address.</p>
+    {% endif %}
+</section>
 
 {% if searched %}
+    <p class="you-asked">You asked: {{ query }}</p>
+
     {% if answer %}
-        <section class="item-card" aria-label="Answer">
-            <span class="badge ok">AI-written answer</span>
-            <p>{{ answer.text }}</p>
-            <p class="muted">Written by {{ answer.provider|title }} using only the records listed below. It can still make mistakes, so confirm details on the official page.</p>
+        <section class="answer-card" aria-label="Answer">
+            <span class="answer-label">AI-written answer</span>
+            <p class="answer-text">{{ answer.text }}</p>
+            <p class="muted">Written by {{ answer.provider|title }} using only the records listed under Sources. It can still make mistakes, so check the source and confirm dates, fees and rules on the official page.</p>
         </section>
     {% elif answer_note == "busy" %}
-        <p class="banner info">Many questions are being asked right now, so the written answer is paused for a minute. The matching records are shown below.</p>
+        <p class="banner info">Lots of questions are being asked right now, so the written answer is paused for a minute. The matching records are shown below.</p>
     {% elif answer_note == "unavailable" %}
         <p class="banner info">The AI answer is not available at the moment. The matching records are shown below.</p>
     {% endif %}
+
+    {% if has_demo %}
+        <p class="banner">Some results are <strong>fictional</strong> demo records.</p>
+    {% endif %}
+
+    {% if results %}<h2 class="sources-title">Sources</h2>{% endif %}
     {% for item in results %}
         <article class="item-card">
-            <h2><a href="{{ item.url }}">{{ item.title }}</a></h2>
+            <h2><span class="src-no">{{ forloop.counter }}</span><a href="{{ item.url }}">{{ item.title }}</a></h2>
             <div class="badges">
                 <span class="badge">{{ item.kind_label }}</span>
                 {% if item.verified %}<span class="badge ok">Verified</span>{% else %}<span class="badge warn">Not verified yet</span>{% endif %}
@@ -76,8 +94,8 @@
 {% endif %}
 
 <p class="disclaimer">
-    These results are stored information, not personal advice. Confirm dates,
-    fees and rules on the official page before you decide. The assistant does
-    not replace a professional career counsellor.
+    These answers are based on stored information, not personal advice. Confirm
+    dates, fees and rules on the official page before you decide. The assistant
+    does not replace a professional career counsellor.
 </p>
 {% endblock %}
