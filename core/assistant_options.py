@@ -79,7 +79,8 @@ STARTING_OPTIONS = [
         "url_name": "counsellor_request",
         "response": (
             COUNSELLOR_HANDOFF_TEXT + " You can send a counselling request "
-            "to our team. Please note that nothing has been requested until "
+            "to our team, or look at the mentor list to ask a working "
+            "professional. Please note that nothing has been requested until "
             "you submit the form, and no counsellor is assigned until the "
             "team reviews your request."
         ),

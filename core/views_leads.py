@@ -16,7 +16,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
 from .handoff import SUGGESTED_MESSAGE, TRIGGER_BY_KEY, trigger_choices
-from .models import Career, College, Lead, StudentProfile
+from .models import Career, College, Lead, Mentor, StudentProfile
 
 MESSAGE_LIMIT = 2000
 _PHONE = re.compile(r"^\+?[0-9][0-9 \-]{5,18}[0-9]$")
@@ -42,7 +42,7 @@ def _clean_contact(email, phone):
 
 
 def _handle_lead_form(request, *, lead_type, template, context, related_college=None,
-                      related_career=None, allow_trigger=False):
+                      related_career=None, related_mentor=None, allow_trigger=False):
     profile = StudentProfile.objects.filter(user=request.user).first()
     values = {
         "contact_email": request.user.email or "",
@@ -76,6 +76,7 @@ def _handle_lead_form(request, *, lead_type, template, context, related_college=
                 message=message,
                 related_college=related_college,
                 related_career=related_career,
+                related_mentor=related_mentor,
                 consent_given=True,
             )
             return redirect("lead_thanks", pk=lead.pk)
@@ -119,6 +120,16 @@ def career_enquiry(request, slug):
 
 
 @login_required(login_url="login")
+def mentor_request(request, pk):
+    mentor = get_object_or_404(Mentor, pk=pk, is_published=True)
+    return _handle_lead_form(
+        request, lead_type="mentor_request", template="core/mentor_request.html",
+        context={"mentor": mentor},
+        related_mentor=mentor,
+    )
+
+
+@login_required(login_url="login")
 def lead_thanks(request, pk):
     lead = get_object_or_404(Lead, pk=pk, user=request.user)
     return render(request, "core/lead_thanks.html", {"lead": lead})
@@ -127,7 +138,7 @@ def lead_thanks(request, pk):
 @login_required(login_url="login")
 def my_requests(request):
     leads = Lead.objects.filter(user=request.user).select_related(
-        "related_college", "related_career", "assigned_to"
+        "related_college", "related_career", "related_mentor", "assigned_to"
     )
     return render(request, "core/my_requests.html", {"leads": leads})
 
@@ -150,6 +161,8 @@ def _journey(lead, profile):
     shortlisted = [c.name for c in lead.shortlist.all()]
     if shortlisted:
         steps.append(("Shortlisted colleges", ", ".join(shortlisted)))
+    if lead.related_mentor:
+        steps.append(("Mentor requested", lead.related_mentor.name))
     if lead.assigned_to:
         steps.append(("Counsellor assigned", lead.assigned_to.get_username()))
     if lead.application_status:
@@ -183,7 +196,7 @@ def lead_dashboard(request):
     unassigned = Lead.objects.filter(assigned_to__isnull=True).exclude(stage="closed").count()
 
     recent = list(
-        Lead.objects.select_related("user", "assigned_to", "related_college", "related_career")
+        Lead.objects.select_related("user", "assigned_to", "related_college", "related_career", "related_mentor")
         .prefetch_related("shortlist")[:50]
     )
     profiles = {

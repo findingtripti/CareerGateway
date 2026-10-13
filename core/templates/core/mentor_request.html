@@ -1,0 +1,25 @@
+{% extends "core/base.html" %}
+
+{% block title %}Ask a mentor | Career Gateway{% endblock %}
+
+{% block extra_head %}{% include "core/_college_styles.html" %}{% endblock %}
+
+{% block content %}
+<p><a href="{% url 'mentor_detail' mentor.pk %}">&larr; Back to {{ mentor.name }}</a></p>
+<h1>Ask {{ mentor.name }} for a session</h1>
+
+{% if mentor.is_demo %}
+    <p class="banner">This mentor is a <strong>fictional</strong> demo profile.</p>
+{% endif %}
+
+<p class="banner info">
+    Your request is saved for the Career Gateway team. No session is booked,
+    the mentor has not been contacted. No payment is taken on this page.
+</p>
+
+<form method="post">
+    {% csrf_token %}
+    {% include "core/_lead_form_fields.html" %}
+    <button class="button" type="submit">Send request</button>
+</form>
+{% endblock %}

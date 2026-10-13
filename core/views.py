@@ -21,10 +21,11 @@ from .college_matching import (
     StudentCriteria,
     detect_education_level,
     is_stale,
+    is_stale as mentor_is_stale,
     recommend_courses,
 )
 from .handoff import detect_triggers, triggers_for_options
-from .models import Career, College, Course, Opportunity, StudentProfile
+from .models import Career, College, Course, Mentor, Opportunity, StudentProfile
 from .opportunity_matching import (
     deadline_status,
     is_stale as opportunity_is_stale,
@@ -270,7 +271,11 @@ def career_detail(request, slug):
     return render(
         request,
         "core/career_detail.html",
-        {"career": career, "faqs": career.faqs.all()},
+        {
+            "career": career,
+            "faqs": career.faqs.all(),
+            "mentors": career.mentors.filter(is_published=True),
+        },
     )
 
 
@@ -563,4 +568,41 @@ def opportunity_recommend(request):
         "criteria": criteria,
         "education_unknown": criteria.education_level is None,
         "has_demo": any(r["opportunity"].is_demo for r in outcome["results"]),
+    })
+
+
+def mentors_list(request):
+    """Public list of published mentors (PDF section 9)."""
+    mentors = Mentor.objects.filter(is_published=True)
+
+    professions = dict(Mentor.PROFESSIONS)
+    profession = request.GET.get("profession", "")
+    if profession not in professions:
+        profession = ""
+    if profession:
+        mentors = mentors.filter(profession=profession)
+
+    career_slug = request.GET.get("career", "")
+    careers = Career.objects.filter(is_published=True)
+    selected_career = careers.filter(slug=career_slug).first() if career_slug else None
+    if selected_career:
+        mentors = mentors.filter(related_careers=selected_career)
+
+    mentors = mentors.prefetch_related("related_careers").distinct()
+    return render(request, "core/mentors.html", {
+        "mentors": mentors,
+        "professions": Mentor.PROFESSIONS,
+        "careers": careers,
+        "profession": profession,
+        "career_slug": selected_career.slug if selected_career else "",
+        "has_demo": any(m.is_demo for m in mentors),
+    })
+
+
+def mentor_detail(request, pk):
+    mentor = get_object_or_404(Mentor, pk=pk, is_published=True)
+    return render(request, "core/mentor_detail.html", {
+        "mentor": mentor,
+        "careers": mentor.related_careers.filter(is_published=True),
+        "stale": mentor_is_stale(mentor),
     })

@@ -276,6 +276,57 @@ class CareerFAQ(models.Model):
         return self.question
 
 
+class Mentor(models.Model):
+    """Experienced professional a student can ask to speak with (PDF
+    section 9). Records here are examples until real, consenting mentors are
+    added and verified by the team."""
+
+    PROFESSIONS = [
+        ("professor", "Professor"),
+        ("doctor", "Doctor"),
+        ("engineer", "Engineer"),
+        ("entrepreneur", "Entrepreneur"),
+        ("government", "Government professional"),
+        ("police_defence", "Police or defence professional"),
+        ("researcher", "Researcher"),
+        ("finance", "Finance professional"),
+        ("lawyer", "Lawyer"),
+        ("other", "Other experienced professional"),
+    ]
+
+    name = models.CharField(max_length=150)
+    profession = models.CharField(max_length=20, choices=PROFESSIONS)
+    headline = models.CharField(max_length=200, blank=True)
+    bio = models.TextField(blank=True)
+    years_experience = models.PositiveSmallIntegerField(null=True, blank=True)
+    location = models.CharField(max_length=150, blank=True)
+    languages = models.CharField(max_length=200, blank=True)
+    availability_note = models.CharField(max_length=200, blank=True)
+    related_careers = models.ManyToManyField(
+        Career, blank=True, related_name="mentors"
+    )
+    contact_note = models.TextField(
+        blank=True,
+        help_text="Private. How the team reaches this mentor. Never shown to students.",
+    )
+
+    # Data quality
+    is_verified = models.BooleanField(default=False)
+    last_verified = models.DateField(null=True, blank=True)
+    source_note = models.TextField(blank=True)
+    is_demo = models.BooleanField(
+        default=False, help_text="Fictional record used for demonstration only."
+    )
+    is_published = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
 class Lead(models.Model):
     """One student enquiry or request that the team follows up (PDF
     sections 8 and 14). Together these records form the lead journey shown
@@ -339,6 +390,10 @@ class Lead(models.Model):
     )
     related_career = models.ForeignKey(
         Career, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="leads",
+    )
+    related_mentor = models.ForeignKey(
+        Mentor, null=True, blank=True, on_delete=models.SET_NULL,
         related_name="leads",
     )
     shortlist = models.ManyToManyField(

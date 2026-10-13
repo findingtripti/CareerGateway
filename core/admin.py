@@ -8,6 +8,7 @@ from .models import (
     College,
     Course,
     Lead,
+    Mentor,
     Opportunity,
     StudentProfile,
 )
@@ -176,7 +177,8 @@ class LeadAdmin(admin.ModelAdmin):
         ("Student", {"fields": ("user", "name", "contact_email", "contact_phone",
                                 "consent_given")}),
         ("Request", {"fields": ("lead_type", "trigger", "message",
-                                "related_college", "related_career")}),
+                                "related_college", "related_career",
+                                "related_mentor")}),
         ("Journey (PDF section 14)", {"fields": (
             "stage", "assigned_to", "shortlist", "application_status",
             "internal_notes",
@@ -199,3 +201,28 @@ class LeadAdmin(admin.ModelAdmin):
     def assign_to_me(self, request, queryset):
         n = queryset.update(assigned_to=request.user, stage="counsellor_assigned")
         self.message_user(request, f"{n} lead(s) assigned to you.")
+
+
+@admin.register(Mentor)
+class MentorAdmin(admin.ModelAdmin):
+    list_display = ("name", "profession", "is_verified", "last_verified",
+                    "is_demo", "is_published")
+    list_filter = ("profession", "is_verified", "is_demo", "is_published")
+    search_fields = ("name", "headline", "bio")
+    filter_horizontal = ("related_careers",)
+    actions = ["mark_verified_today"]
+    fieldsets = (
+        (None, {"fields": ("name", "profession", "headline", "bio",
+                           "years_experience", "location", "languages",
+                           "availability_note", "related_careers",
+                           "is_published")}),
+        ("Private", {"fields": ("contact_note",),
+                     "description": "Never shown to students."}),
+        ("Data quality", {"fields": ("is_verified", "last_verified",
+                                     "source_note", "is_demo")}),
+    )
+
+    @admin.action(description="Mark selected mentors as verified today")
+    def mark_verified_today(self, request, queryset):
+        n = queryset.update(is_verified=True, last_verified=date.today())
+        self.message_user(request, f"{n} mentor(s) marked as verified.")

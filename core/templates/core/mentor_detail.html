@@ -1,0 +1,47 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ mentor.name }} | Career Gateway{% endblock %}
+
+{% block extra_head %}{% include "core/_college_styles.html" %}{% endblock %}
+
+{% block content %}
+<p><a href="{% url 'mentors' %}">&larr; All mentors</a></p>
+<h1>{{ mentor.name }}</h1>
+<p class="muted">{{ mentor.get_profession_display }}{% if mentor.location %} &middot; {{ mentor.location }}{% endif %}</p>
+
+<div class="badges">
+    {% if mentor.is_verified %}<span class="badge ok">Verified</span>{% else %}<span class="badge warn">Not verified yet</span>{% endif %}
+    {% if mentor.is_demo %}<span class="badge demo">Demo (fictional)</span>{% endif %}
+    {% if stale %}<span class="badge warn">Information may be out of date</span>{% endif %}
+</div>
+
+{% if mentor.is_demo %}
+    <p class="banner">This is a <strong>fictional</strong> demo profile. This person does not exist.</p>
+{% endif %}
+
+{% if mentor.headline %}<p><strong>{{ mentor.headline }}</strong></p>{% endif %}
+{% if mentor.bio %}<p>{{ mentor.bio }}</p>{% endif %}
+
+<dl class="facts">
+    {% if mentor.years_experience %}<dt>Experience</dt><dd>{{ mentor.years_experience }} years</dd>{% endif %}
+    {% if mentor.languages %}<dt>Languages</dt><dd>{{ mentor.languages }}</dd>{% endif %}
+    {% if mentor.availability_note %}<dt>Availability</dt><dd>{{ mentor.availability_note }}</dd>{% endif %}
+    {% if careers %}
+    <dt>Can talk about</dt>
+    <dd>{% for career in careers %}<a href="{% url 'career_detail' career.slug %}">{{ career.title }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</dd>
+    {% endif %}
+</dl>
+
+<p><a class="button" href="{% url 'mentor_request' mentor.pk %}">Ask for a session</a></p>
+
+<div class="disclaimer">
+    <strong>Data quality.</strong>
+    Last verified:
+    {% if mentor.last_verified %}{{ mentor.last_verified|date:"j M Y" }}{% else %}not recorded{% endif %}.
+    {% if mentor.source_note %}Source: {{ mentor.source_note }}{% endif %}
+    <br>
+    Asking for a session sends a request to the Career Gateway team. It does
+    not book anything. A mentor shares experience and does not replace a
+    career counsellor.
+</div>
+{% endblock %}

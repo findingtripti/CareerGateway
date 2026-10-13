@@ -1,0 +1,61 @@
+{% extends "core/base.html" %}
+
+{% block title %}Mentors | Career Gateway{% endblock %}
+
+{% block extra_head %}{% include "core/_college_styles.html" %}{% endblock %}
+
+{% block content %}
+<h1>Professional mentors</h1>
+<p>
+    A mentor is a working professional who can tell you what a career is
+    really like. Pick a career or a profession to see who could help.
+</p>
+
+{% if has_demo %}
+    <p class="banner">
+        The mentors on this page are <strong>fictional</strong> demo
+        profiles. They are not real people.
+    </p>
+{% endif %}
+
+<form method="get" class="filter-form">
+    <div class="form-field">
+        <label for="career">Career</label>
+        <select id="career" name="career" style="width:100%;padding:10px 12px;border:1px solid #b9c3d9;border-radius:6px;font-size:16px;">
+            <option value="">All careers</option>
+            {% for career in careers %}
+                <option value="{{ career.slug }}" {% if career.slug == career_slug %}selected{% endif %}>{{ career.title }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-field">
+        <label for="profession">Profession</label>
+        <select id="profession" name="profession" style="width:100%;padding:10px 12px;border:1px solid #b9c3d9;border-radius:6px;font-size:16px;">
+            <option value="">All professions</option>
+            {% for value, label in professions %}
+                <option value="{{ value }}" {% if value == profession %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button class="button" type="submit">Filter</button>
+</form>
+
+{% for mentor in mentors %}
+    <article class="item-card">
+        <h2><a href="{% url 'mentor_detail' mentor.pk %}">{{ mentor.name }}</a></h2>
+        <p class="muted">{{ mentor.get_profession_display }}{% if mentor.location %} &middot; {{ mentor.location }}{% endif %}</p>
+        <div class="badges">
+            {% if mentor.is_verified %}<span class="badge ok">Verified</span>{% else %}<span class="badge warn">Not verified yet</span>{% endif %}
+            {% if mentor.is_demo %}<span class="badge demo">Demo (fictional)</span>{% endif %}
+        </div>
+        {% if mentor.headline %}<p>{{ mentor.headline }}</p>{% endif %}
+    </article>
+{% empty %}
+    <p class="banner info">No mentors match. Try removing a filter.</p>
+{% endfor %}
+
+<p class="disclaimer">
+    Asking a mentor is a request, not a booking. The Career Gateway team
+    reviews every request first.
+</p>
+{% endblock %}

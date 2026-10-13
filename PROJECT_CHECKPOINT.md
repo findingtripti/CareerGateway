@@ -135,3 +135,12 @@ The tests lock in CURRENT behaviour, not ideal behaviour. For example, profile f
 - Honest limits: no email or SMS is sent yet (M10). Counsellor assignment is a manual admin action. Tier is a label only.
 - Tests: 162 passing in the build sandbox.
 - Next: M7 mentors (sec 9), then M8 knowledge base, M9 school version, M10 wrap-up.
+
+## 16. Milestone 7 - Mentors (PDF section 9) plus home navbar and timezone fixes [REQ-09]
+- Mentor model (migration 0009): the ten professions the PDF lists, linked to careers, with verification, demo and publish flags. A private contact_note is never shown to students. Lead gains related_mentor.
+- Flow from the PDF: career profile -> mentors for that career -> ask for a session. Career pages list matching mentors. /mentors/ filters by career and profession.
+- "Ask for a session" saves a mentor_request lead (tier label Paid). It books nothing, contacts no mentor and takes no payment. Pages say so.
+- `seed_demo_mentors` adds clearly FICTIONAL mentors. Real mentors need consent and verification before launch.
+- Home page now uses the same links as the rest of the site (it had its own older navbar). TIME_ZONE changed to Asia/Kolkata (dashboard times were shown in UTC).
+- Tests: 185 passing in the build sandbox.
+- Next: M8 knowledge base and retrieval answers (sec 13), M9 school version (sec 11), M10 wrap-up.

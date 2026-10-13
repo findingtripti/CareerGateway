@@ -17,6 +17,7 @@ from .assistant_options import OPTIONS_BY_KEY
 from .handoff import SUGGESTED_MESSAGE, detect_triggers, triggers_for_options
 from .models import (
     Lead,
+    Mentor,
     Career,
     CareerFAQ,
     College,
@@ -1442,3 +1443,184 @@ class LeadAdminTests(TestCase):
             "action": "mark_contacted", "_selected_action": [self.lead.pk]})
         self.lead.refresh_from_db()
         self.assertEqual(self.lead.stage, "contacted")
+
+
+def make_mentor(name="Demo Mentor", profession="engineer", careers=(),
+                published=True, demo=True, verified=True, days_ago=10):
+    mentor = Mentor.objects.create(
+        name=name,
+        profession=profession,
+        headline="Fictional mentor for demonstration.",
+        bio="Demo bio.",
+        is_published=published,
+        is_demo=demo,
+        is_verified=verified,
+        last_verified=date.today() - timedelta(days=days_ago),
+    )
+    mentor.related_careers.set(careers)
+    return mentor
+
+
+def make_career(title="Cybersecurity", slug="cybersecurity", keywords="security"):
+    return Career.objects.create(
+        title=title, slug=slug, summary="s", what_professionals_do="a",
+        required_education="a", entrance_exams="a", important_skills="a",
+        career_pathway="a", possible_roles="a", higher_education_options="a",
+        work_environments="a", professional_insights="a", keywords=keywords)
+
+
+class MentorPagesTests(TestCase):
+    def setUp(self):
+        self.career = make_career()
+        self.other = make_career("Data Science", "data-science", "data")
+        self.sec = make_mentor("Security Mentor", "police_defence", [self.career])
+        self.data = make_mentor("Data Mentor", "researcher", [self.other])
+        make_mentor("Hidden Mentor", published=False)
+
+    def test_list_is_public_and_hides_unpublished(self):
+        r = self.client.get(reverse("mentors"))
+        self.assertContains(r, "Security Mentor")
+        self.assertNotContains(r, "Hidden Mentor")
+
+    def test_demo_banner_and_labels(self):
+        r = self.client.get(reverse("mentors"))
+        self.assertContains(r, "fictional")
+
+    def test_filter_by_career(self):
+        r = self.client.get(reverse("mentors") + "?career=cybersecurity")
+        self.assertContains(r, "Security Mentor")
+        self.assertNotContains(r, "Data Mentor")
+
+    def test_filter_by_profession(self):
+        r = self.client.get(reverse("mentors") + "?profession=researcher")
+        self.assertContains(r, "Data Mentor")
+        self.assertNotContains(r, "Security Mentor")
+
+    def test_invalid_filters_are_ignored(self):
+        r = self.client.get(reverse("mentors") + "?profession=zzz&career=%27")
+        self.assertEqual(r.status_code, 200)
+
+    def test_detail_shows_data_quality_and_no_booking_claim(self):
+        r = self.client.get(reverse("mentor_detail", args=[self.sec.pk]))
+        self.assertContains(r, "Last verified")
+        self.assertContains(r, "Security Mentor")
+        self.assertNotContains(r, "has been booked")
+
+    def test_unpublished_detail_404(self):
+        hidden = Mentor.objects.get(name="Hidden Mentor")
+        self.assertEqual(self.client.get(reverse("mentor_detail", args=[hidden.pk])).status_code, 404)
+
+    def test_career_page_lists_matching_mentors(self):
+        r = self.client.get(reverse("career_detail", args=[self.career.slug]))
+        self.assertContains(r, "Security Mentor")
+        self.assertNotContains(r, "Data Mentor")
+
+    def test_mentor_contact_details_are_never_public(self):
+        Mentor.objects.filter(pk=self.sec.pk).update(contact_note="private-note-xyz")
+        r = self.client.get(reverse("mentor_detail", args=[self.sec.pk]))
+        self.assertNotContains(r, "private-note-xyz")
+
+
+class MentorRequestTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("student1", password="StrongPass#123")
+        self.client.login(username="student1", password="StrongPass#123")
+        self.mentor = make_mentor("Security Mentor")
+        self.url = reverse("mentor_request", args=[self.mentor.pk])
+        self.good = {"contact_email": "a@example.com", "message": "Hello", "consent": "1"}
+
+    def test_requires_login(self):
+        self.client.logout()
+        self.assertEqual(self.client.get(self.url).status_code, 302)
+
+    def test_page_is_honest(self):
+        r = self.client.get(self.url)
+        self.assertContains(r, "No session is booked")
+        self.assertContains(r, "No payment is taken")
+
+    def test_valid_request_creates_mentor_lead(self):
+        r = self.client.post(self.url, self.good)
+        lead = Lead.objects.get()
+        self.assertEqual(lead.lead_type, "mentor_request")
+        self.assertEqual(lead.related_mentor, self.mentor)
+        self.assertEqual(lead.tier, "paid")
+        self.assertRedirects(r, reverse("lead_thanks", args=[lead.pk]))
+
+    def test_consent_required(self):
+        data = dict(self.good); data.pop("consent")
+        self.client.post(self.url, data)
+        self.assertEqual(Lead.objects.count(), 0)
+
+    def test_unpublished_mentor_request_is_404(self):
+        hidden = make_mentor("Hidden", published=False)
+        r = self.client.post(reverse("mentor_request", args=[hidden.pk]), self.good)
+        self.assertEqual(r.status_code, 404)
+
+    def test_my_requests_names_the_mentor(self):
+        self.client.post(self.url, self.good)
+        r = self.client.get(reverse("my_requests"))
+        self.assertContains(r, "Security Mentor")
+
+    def test_dashboard_journey_names_the_mentor(self):
+        self.client.post(self.url, self.good)
+        User.objects.create_user("boss", password="StrongPass#123", is_staff=True)
+        self.client.login(username="boss", password="StrongPass#123")
+        r = self.client.get(reverse("lead_dashboard"))
+        self.assertContains(r, "Mentor requests")
+        self.assertContains(r, "Security Mentor")
+
+
+class MentorSeedAndAdminTests(TestCase):
+    def test_seed_is_labelled_repeatable_and_linked(self):
+        call_command("seed_careers", verbosity=0)
+        call_command("seed_demo_mentors", verbosity=0)
+        n = Mentor.objects.count()
+        self.assertGreaterEqual(n, 5)
+        self.assertFalse(Mentor.objects.filter(is_demo=False).exists())
+        self.assertTrue(Mentor.objects.filter(related_careers__isnull=False).exists())
+        call_command("seed_demo_mentors", verbosity=0)
+        self.assertEqual(Mentor.objects.count(), n)
+
+    def test_admin_pages_and_action(self):
+        User.objects.create_superuser("boss", "b@example.com", "StrongPass#123")
+        self.client.login(username="boss", password="StrongPass#123")
+        m = make_mentor(verified=False)
+        self.assertEqual(self.client.get("/admin/core/mentor/").status_code, 200)
+        self.assertEqual(self.client.get(f"/admin/core/mentor/{m.pk}/change/").status_code, 200)
+        self.client.post("/admin/core/mentor/", {
+            "action": "mark_verified_today", "_selected_action": [m.pk]})
+        m.refresh_from_db()
+        self.assertTrue(m.is_verified)
+        self.assertEqual(m.last_verified, date.today())
+
+
+class AssistantMentorLinkTests(TestCase):
+    def test_professional_option_also_links_to_mentors(self):
+        User.objects.create_user("student1", password="StrongPass#123")
+        self.client.login(username="student1", password="StrongPass#123")
+        r = self.client.get(reverse("assistant"))
+        self.assertContains(r, reverse("mentors"))
+
+
+class HomeAndNavigationTests(TestCase):
+    def test_home_navbar_has_all_main_sections_for_visitors(self):
+        r = self.client.get(reverse("home"))
+        for name in ("careers", "colleges", "opportunities", "mentors"):
+            self.assertContains(r, reverse(name))
+
+    def test_home_navbar_for_students_has_requests_but_not_dashboard(self):
+        User.objects.create_user("student1", password="StrongPass#123")
+        self.client.login(username="student1", password="StrongPass#123")
+        r = self.client.get(reverse("home"))
+        self.assertContains(r, reverse("my_requests"))
+        self.assertNotContains(r, reverse("lead_dashboard"))
+
+    def test_home_navbar_for_staff_has_dashboard(self):
+        User.objects.create_user("boss", password="StrongPass#123", is_staff=True)
+        self.client.login(username="boss", password="StrongPass#123")
+        r = self.client.get(reverse("home"))
+        self.assertContains(r, reverse("lead_dashboard"))
+
+    def test_timezone_is_india(self):
+        from django.conf import settings
+        self.assertEqual(settings.TIME_ZONE, "Asia/Kolkata")

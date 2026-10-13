@@ -18,6 +18,7 @@
         <p class="muted">Sent {{ lead.created_at|date:"j M Y" }}
             {% if lead.related_college %}&middot; about {{ lead.related_college.name }}{% endif %}
             {% if lead.related_career %}&middot; about {{ lead.related_career.title }}{% endif %}
+            {% if lead.related_mentor %}&middot; mentor {{ lead.related_mentor.name }}{% endif %}
         </p>
         {% if lead.message %}<p>{{ lead.message }}</p>{% endif %}
     </article>

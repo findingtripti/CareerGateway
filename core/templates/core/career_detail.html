@@ -127,6 +127,18 @@
         </a>
     </div>
 
+    {% if mentors %}
+        <section class="career-section">
+            <h2>Mentors for this career</h2>
+            <ul>
+                {% for mentor in mentors %}
+                    <li><a href="{% url 'mentor_detail' mentor.pk %}">{{ mentor.name }}</a>,
+                        {{ mentor.get_profession_display }}{% if mentor.is_demo %} (fictional demo){% endif %}</li>
+                {% endfor %}
+            </ul>
+        </section>
+    {% endif %}
+
     <p>
         <a class="button" href="{% url 'career_enquiry' career.slug %}">Ask a question about this career</a>
     </p>
