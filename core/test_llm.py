@@ -234,7 +234,7 @@ class AskPageWithLLMTests(LLMTestCase):
     def test_page_without_llm_has_no_ai_label(self):
         with env():
             r = self.client.get(reverse("ask"), {"q": "entrance exam"})
-        self.assertNotContains(r, "AI-written")
+        self.assertNotContains(r, 'class="answer-label"')
         self.assertContains(r, "What is an entrance exam?")
 
     def test_page_mentions_privacy_note_when_llm_on(self):
@@ -284,3 +284,28 @@ class FilesSafetyTests(TestCase):
         text = p.read_text(encoding="utf-8")
         self.assertIn("GEMINI_API_KEY=", text)
         self.assertNotRegex(text, r"AIza[0-9A-Za-z_\-]{20,}")
+
+
+class WidgetAnswerTests(TestCase):
+    def setUp(self):
+        from pathlib import Path
+        self.html = (Path(__file__).parent / "templates/core/_chat_widget.html").read_text(encoding="utf-8")
+
+    def test_widget_shows_ai_answer_with_label(self):
+        self.assertIn("data.answer", self.html)
+        self.assertIn("AI-written answer", self.html)
+
+    def test_widget_handles_busy_and_unavailable(self):
+        self.assertIn("busy", self.html)
+        self.assertIn("not available", self.html)
+
+    def test_widget_has_close_button_and_sources_list(self):
+        self.assertIn('id="cg-chat-close"', self.html)
+        self.assertIn("Sources", self.html)
+
+    def test_widget_has_privacy_note(self):
+        self.assertIn("personal details", self.html)
+
+    def test_widget_renders_answer_as_text_not_html(self):
+        self.assertNotIn("innerHTML", self.html)
+        self.assertIn("body.textContent = data.answer", self.html)

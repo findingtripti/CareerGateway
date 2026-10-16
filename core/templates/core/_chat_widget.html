@@ -1,32 +1,48 @@
 <div id="cg-chat" class="cg-chat" aria-label="Ask Career Gateway">
     <div id="cg-chat-panel" class="cg-chat-panel" hidden>
+        <div class="cg-chat-head">
+            <strong>Ask Career Gateway</strong>
+            <button type="button" id="cg-chat-close" class="cg-chat-close" aria-label="Close chat">&times;</button>
+        </div>
         <form id="cg-chat-form" action="{% url 'ask' %}" method="get" role="search">
-            <label for="cg-chat-q"><strong>Ask Career Gateway</strong></label>
+            <label for="cg-chat-q" class="cg-chat-sr">Your question</label>
             <input id="cg-chat-q" name="q" type="text" maxlength="200" placeholder="For example: what is an entrance exam?" autocomplete="off">
             <button type="submit">Ask</button>
             <button type="button" id="cg-chat-clear" class="cg-chat-clear" hidden>Clear</button>
         </form>
         <div id="cg-chat-out" aria-live="polite"></div>
-        <p class="cg-chat-note">Answers come from Career Gateway records, not from general AI knowledge. A counsellor can help with personal decisions.</p>
+        <p class="cg-chat-note">Answers are written only from Career Gateway records. Please do not type personal details. A counsellor can help with personal decisions.</p>
     </div>
     <button type="button" id="cg-chat-toggle" class="cg-chat-toggle" aria-expanded="false" aria-controls="cg-chat-panel" hidden>Ask a question</button>
     <noscript><a class="cg-chat-link" href="{% url 'ask' %}">Ask a question</a></noscript>
 </div>
 <style>
-    .cg-chat { position: fixed; right: 16px; bottom: 16px; z-index: 50; font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: flex-end; }
-    .cg-chat-toggle, .cg-chat-link { background: #243b6b; color: #fff; border: 0; border-radius: 999px; padding: 12px 18px; font-size: 15px; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.25); text-decoration: none; display: inline-block; }
-    .cg-chat-panel { width: min(360px, calc(100vw - 32px)); max-height: calc(100vh - 100px); overflow: auto; margin-bottom: 10px; background: #fff; border: 1px solid #c9d6f2; border-radius: 12px; padding: 14px; box-shadow: 0 6px 24px rgba(0,0,0,.2); font-size: 14px; color: #222; }
-    .cg-chat-panel form { display: flex; flex-wrap: wrap; gap: 8px; }
-    .cg-chat-panel label { flex: 1 1 100%; }
-    .cg-chat-panel input { flex: 1 1 150px; padding: 9px 10px; border: 1px solid #b9c3d9; border-radius: 6px; font-size: 16px; }
-    .cg-chat-panel button { background: #243b6b; color: #fff; border: 0; border-radius: 6px; padding: 9px 14px; cursor: pointer; }
+    .cg-chat { position: fixed; right: 16px; bottom: 16px; z-index: 50; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; display: flex; flex-direction: column; align-items: flex-end; }
+    .cg-chat-toggle, .cg-chat-link { background: linear-gradient(135deg, #2f4a85, #243b6b); color: #fff; border: 0; border-radius: 999px; padding: 13px 20px; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 6px 18px rgba(36,59,107,.4); text-decoration: none; display: inline-block; }
+    .cg-chat-panel { width: min(400px, calc(100vw - 24px)); max-height: calc(100vh - 96px); max-height: calc(100dvh - 96px); display: flex; flex-direction: column; margin-bottom: 10px; background: #fff; border: 1px solid #c9d6f2; border-radius: 16px; box-shadow: 0 12px 36px rgba(0,0,0,.25); font-size: 14px; color: #1f2937; overflow: hidden; }
+    .cg-chat-panel[hidden] { display: none; }
+    .cg-chat-head { display: flex; justify-content: space-between; align-items: center; background: #243b6b; color: #fff; padding: 12px 14px; }
+    .cg-chat-panel .cg-chat-close { background: transparent; color: #fff; border: 0; font-size: 24px; line-height: 1; padding: 0 4px; cursor: pointer; }
+    .cg-chat-panel form { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 14px 4px; }
+    .cg-chat-sr { position: absolute; left: -9999px; }
+    .cg-chat-panel input { flex: 1 1 150px; padding: 10px 12px; border: 1px solid #b9c3d9; border-radius: 10px; font-size: 16px; }
+    .cg-chat-panel form button { background: #243b6b; color: #fff; border: 0; border-radius: 10px; padding: 10px 16px; cursor: pointer; font-weight: 600; }
     .cg-chat-panel button.cg-chat-clear { background: #e8ecf5; color: #243b6b; }
-    .cg-chat-asked { color: #55607a; margin: 10px 0 4px; font-style: italic; word-break: break-word; }
+    #cg-chat-out { overflow-y: auto; padding: 4px 14px 6px; flex: 1 1 auto; }
+    .cg-chat-asked { background: #243b6b; color: #fff; border-radius: 14px 14px 2px 14px; padding: 8px 12px; margin: 10px 0 8px auto; max-width: 90%; width: fit-content; word-break: break-word; }
+    .cg-chat-answer { background: #f1f5ff; border: 1px solid #c9d6f2; border-radius: 14px 14px 14px 2px; padding: 10px 12px; margin: 8px 0; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+    .cg-chat-tag { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; background: #243b6b; color: #fff; padding: 2px 8px; border-radius: 999px; margin-bottom: 4px; }
+    .cg-chat-sub { color: #55607a; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin: 12px 0 2px; }
+    .cg-chat-status { color: #55607a; margin: 8px 0; }
     .cg-chat-item { border-top: 1px solid #e5e9f3; padding: 8px 0; }
     .cg-chat-item a { color: #243b6b; font-weight: bold; }
     .cg-chat-item small { color: #55607a; display: block; }
-    .cg-chat-help { background: #eef3ff; border-radius: 8px; padding: 8px 10px; margin: 8px 0; }
-    .cg-chat-note { color: #55607a; font-size: 12px; margin: 10px 0 0; }
+    .cg-chat-help { background: #eef3ff; border-radius: 10px; padding: 8px 10px; margin: 8px 0; }
+    .cg-chat-note { color: #55607a; font-size: 12px; margin: 0; padding: 8px 14px 12px; border-top: 1px solid #eef0f6; }
+    @media (max-width: 480px) {
+        .cg-chat { right: 12px; bottom: 12px; }
+        .cg-chat-panel { width: calc(100vw - 24px); }
+    }
 </style>
 <script>
 (function () {
@@ -36,6 +52,7 @@
     var out = document.getElementById("cg-chat-out");
     var input = document.getElementById("cg-chat-q");
     var clearBtn = document.getElementById("cg-chat-clear");
+    var closeBtn = document.getElementById("cg-chat-close");
     if (!toggle || !panel || !form || !window.fetch) { return; }
     toggle.hidden = false;
 
@@ -54,6 +71,12 @@
         panel.hidden = !open;
         toggle.setAttribute("aria-expanded", String(open));
         if (open) { input.focus(); }
+    });
+
+    closeBtn.addEventListener("click", function () {
+        panel.hidden = true;
+        toggle.setAttribute("aria-expanded", "false");
+        toggle.focus();
     });
 
     // Typing a new question removes the previous answer straight away.
@@ -80,7 +103,8 @@
         asked.textContent = "You asked: " + q;
         out.appendChild(asked);
         var status = document.createElement("p");
-        status.textContent = "Searching...";
+        status.className = "cg-chat-status";
+        status.textContent = "Reading the records...";
         out.appendChild(status);
         fetch("{% url 'ask_api' %}?q=" + encodeURIComponent(q), { headers: { "Accept": "application/json" } })
             .then(function (r) { return r.json(); })
@@ -103,12 +127,37 @@
                     help.appendChild(req);
                     out.appendChild(help);
                 }
-                data.results.forEach(function (item) {
+
+                if (data.answer) {
+                    var ans = document.createElement("div");
+                    ans.className = "cg-chat-answer";
+                    var tag = document.createElement("span");
+                    tag.className = "cg-chat-tag";
+                    tag.textContent = "AI-written answer";
+                    var body = document.createElement("div");
+                    body.textContent = data.answer;
+                    ans.appendChild(tag); ans.appendChild(body);
+                    out.appendChild(ans);
+                } else if (data.answer_note) {
+                    var wait = document.createElement("p");
+                    wait.className = "cg-chat-status";
+                    wait.textContent = data.answer_note === "busy"
+                        ? "Many questions right now, so the written answer is paused. Records are shown below."
+                        : "The written answer is not available right now. Records are shown below.";
+                    out.appendChild(wait);
+                }
+                if (data.results.length) {
+                    var sub = document.createElement("div");
+                    sub.className = "cg-chat-sub";
+                    sub.textContent = "Sources";
+                    out.appendChild(sub);
+                }
+                data.results.forEach(function (item, index) {
                     var box = document.createElement("div");
                     box.className = "cg-chat-item";
                     var link = document.createElement("a");
                     link.href = item.url;
-                    link.textContent = item.title;
+                    link.textContent = "[" + (index + 1) + "] " + item.title;
                     var meta = document.createElement("small");
                     meta.textContent = item.kind + (item.verified ? ", verified" : ", not verified yet") + (item.demo ? ", fictional demo" : "");
                     var text = document.createElement("span");
