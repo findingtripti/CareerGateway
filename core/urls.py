@@ -26,6 +26,7 @@ urlpatterns = [
     path("opportunities/", views.opportunities_list, name="opportunities"),
     path("opportunities/for-me/", views.opportunity_recommend, name="opportunity_recommend"),
     path("opportunities/<int:pk>/", views.opportunity_detail, name="opportunity_detail"),
+    path("how-it-works/", views.architecture, name="architecture"),
     path("school/", views_school.school_home, name="school"),
     path("school/<int:pk>/register/", views_school.school_register, name="school_register"),
     path("staff/school/", views_school.school_dashboard, name="school_dashboard"),

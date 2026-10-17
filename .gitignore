@@ -24,3 +24,4 @@ Thumbs.db
 .idea/
 !.env.exampledb_before_migration_backup.sqlite3
 *.sqlite3
+VIVA_NOTES.md

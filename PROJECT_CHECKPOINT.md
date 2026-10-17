@@ -164,3 +164,16 @@ The tests lock in CURRENT behaviour, not ideal behaviour. For example, profile f
 - Retrieval ranking: generic site words (college, course, career, ...) now count 0.3 instead of 1 in body/keyword matches, so records that match only a generic word rank below records matching a specific word. Titles still count 3.
 - Tests: 250 passing in the build sandbox.
 - Next: M10 wrap-up (README, viva notes, architecture sec 12, PostgreSQL setting, notifications, final tests).
+
+## 19. Milestone 10 - Free LLM answers (PDF sections 13, 16), UI refresh, deploy readiness, docs
+- `core/llm.py`: free LLM layer over the existing retrieval. Provider chosen in `.env`: `gemini` (Google Gemini free tier), `ollama` (local) or `none`. Retrieved records go into the prompt, the model writes a short answer using only them and cites [1], [2]. No records means no model call. Standard library only.
+- Resilience: up to 3 tries per model on 503/429/network errors, an optional fallback model (`GEMINI_FALLBACK_MODEL`), 1 hour answer cache, 10 calls per minute per visitor. Any failure falls back to the plain retrieved results. The key travels in a header, never in a URL, page, log line or error.
+- Only the question and public record text are sent to the model. Pages warn users not to type personal details (free AI tiers may use input to improve products).
+- `check_llm` command: asks the real model one question and FAILS if the answer is a copy of retrieved text. Verified on the developer's machine against real Gemini.
+- Retrieval gained a `context` field (a few matched sentences) for the prompt. Ranking is unchanged.
+- UI: responsive navbar with Menu button (also on home), new Ask page (answer card, numbered sources), new chat widget (AI answer bubble, sources, close and clear buttons, mobile width), styled tables, footer link.
+- `/how-it-works/` architecture page (PDF section 12).
+- Deploy readiness (PDF section 16): `DATABASE_URL` selects PostgreSQL (`config/dbconfig.py`), whitenoise and gunicorn in requirements (UTF-8 now), `DJANGO_SECURE_DEPLOY` hardening, `CSRF_TRUSTED_ORIGINS` from env. See DEPLOY.md.
+- Docs: README.md, VIVA_NOTES.md, DEPLOY.md.
+- NOT DONE (future work, stated honestly): embeddings and vector database (retrieval is word-based), chat-based gradual profile capture (section 4), real booking, payments, SMS and email, per-school environments and teacher accounts, real verified data.
+- Tests: 304 in the build sandbox.

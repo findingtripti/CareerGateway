@@ -160,14 +160,23 @@
                 padding: 14px 16px;
             }
         }
+        .nav-toggle { display: none; background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.5); border-radius: 8px; padding: 8px 12px; font-size: 15px; cursor: pointer; }
+        @media (max-width: 960px) {
+            .nav-toggle { display: inline-block; }
+            .js .nav-links { display: none; width: 100%; flex-direction: column; align-items: stretch; gap: 2px; }
+            .js .nav-links.open { display: flex; }
+            .js .nav-links a { padding: 12px; font-size: 16px; }
+        }
     </style>
+    <script>document.documentElement.classList.add('js');</script>
 </head>
 
 <body>
     <nav class="navbar">
         <a class="brand" href="{% url 'home' %}">Career Gateway</a>
+        <button type="button" class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="nav-links">Menu</button>
 
-        <div class="nav-links">
+        <div class="nav-links" id="nav-links">
             <a href="{% url 'home' %}">Home</a>
             <a href="{% url 'careers' %}">Explore Careers</a>
             <a href="{% url 'colleges' %}">Colleges</a>
@@ -323,6 +332,18 @@
             it does not replace professional career counselling.
         </p>
     </main>
+    {% include "core/_footer.html" %}
     {% include "core/_chat_widget.html" %}
+    <script>
+        (function () {
+            var btn = document.getElementById("nav-toggle");
+            var links = document.getElementById("nav-links");
+            if (!btn || !links) { return; }
+            btn.addEventListener("click", function () {
+                var open = links.classList.toggle("open");
+                btn.setAttribute("aria-expanded", String(open));
+            });
+        })();
+    </script>
 </body>
 </html>

@@ -1,0 +1,69 @@
+{% extends "core/base.html" %}
+
+{% block title %}How Career Gateway works{% endblock %}
+
+{% block extra_head %}{% include "core/_college_styles.html" %}
+<style>
+    .flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; margin: 16px 0; }
+    .flow .step { flex: 1 1 150px; background: #f4f7ff; border: 1px solid #b8c7ee; border-radius: 12px; padding: 12px; text-align: center; font-weight: 600; color: var(--cg-primary); position: relative; }
+    .flow .step small { display: block; font-weight: 400; color: var(--cg-muted); margin-top: 4px; }
+    .flow .arrow { align-self: center; color: var(--cg-muted); font-size: 20px; }
+    .flow .human { background: #fff7e8; border-color: #f0d49a; }
+    .roles { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 12px 0 20px; }
+    .roles .item-card { margin-top: 0; }
+    @media (max-width: 650px) { .flow .arrow { display: none; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>How Career Gateway works</h1>
+<p>
+    Career Gateway puts three kinds of help in order: an AI assistant for access,
+    human counsellors for guidance, and working professionals for real
+    experience. The assistant does not replace a professional counsellor.
+</p>
+
+<h2>The journey</h2>
+<div class="flow" aria-label="Student journey">
+    <div class="step">Student<small>asks a question or explores</small></div><span class="arrow">&rarr;</span>
+    <div class="step">Career Assistant<small>understands and informs</small></div><span class="arrow">&rarr;</span>
+    <div class="step">Careers, Colleges, Opportunity records<small>controlled knowledge base</small></div><span class="arrow">&rarr;</span>
+    <div class="step">Student Profile<small>what you told us</small></div><span class="arrow">&rarr;</span>
+    <div class="step">Recommendation engine<small>rules you can read</small></div><span class="arrow">&rarr;</span>
+    <div class="step human">Human Counsellor<small>assesses and guides</small></div><span class="arrow">&rarr;</span>
+    <div class="step human">Professional Mentor<small>shares real experience</small></div>
+</div>
+
+<div class="roles">
+    <div class="item-card"><h3>AI: understand, inform, explore, connect</h3>
+        <p>Answers common questions, shows career ideas with the reasons, and points to the right page or person.</p></div>
+    <div class="item-card"><h3>Counsellor: assess, discuss, guide, plan</h3>
+        <p>Helps with personal decisions, college comparison and admissions. The assistant suggests this when a question needs judgement.</p></div>
+    <div class="item-card"><h3>Mentor: real experience</h3>
+        <p>A working professional explains what the job is really like and sets realistic expectations.</p></div>
+</div>
+
+<h2>How a question is answered</h2>
+<ol>
+    <li><strong>Retrieve.</strong> The question is matched against published records (careers, colleges, opportunities, mentors, FAQs, entrance exams and more). Each record carries a verified or not verified label and a fictional demo label where it applies.</li>
+    <li><strong>Generate.</strong> A free language model (Google Gemini free tier, or a local Ollama model) writes a short answer using only those records, with source numbers like [1].</li>
+    <li><strong>Check yourself.</strong> Every record used is listed under the answer, so you can open it and confirm.</li>
+    <li><strong>Fall back.</strong> If nothing is found, or the model is busy, we show the records or say we could not find it. We do not guess.</li>
+</ol>
+
+<h2>How matching works</h2>
+<ul>
+    <li><strong>Colleges:</strong> hard limits (such as eligibility and budget) exclude a college with the reason shown. Preferences only change the order. Missing information is flagged, never silently ignored.</li>
+    <li><strong>Partner colleges</strong> are labelled clearly, and being a partner never changes the order.</li>
+    <li><strong>Handoff:</strong> situations such as a college comparison, an admission decision or confusion between options suggest a human counsellor.</li>
+    <li><strong>Leads:</strong> requests are recorded for the team. The system does not book sessions or take payments.</li>
+</ul>
+
+<h2>Honest limits</h2>
+<ul>
+    <li>Search is word-based. It does not yet use embeddings or a vector database.</li>
+    <li>Colleges, opportunities and mentors shown here are fictional demo data, and knowledge entries are not verified yet.</li>
+    <li>The assistant does not replace a counsellor, and a written answer can still contain mistakes.</li>
+    <li>Free AI services may use submitted question text to improve their products, so please do not type personal details.</li>
+</ul>
+{% endblock %}

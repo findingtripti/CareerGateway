@@ -21,6 +21,7 @@ import json
 import logging
 import os
 import re
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -29,7 +30,11 @@ from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
-TIMEOUT_SECONDS = 25
+TIMEOUT_SECONDS = 20
+MAX_ATTEMPTS_PER_MODEL = 3
+RETRY_DELAYS = (1, 3)  # seconds to wait before attempt 2 and 3
+TOTAL_BUDGET_SECONDS = 45
+RETRYABLE_HTTP = (429, 500, 502, 503, 504)
 MAX_ANSWER_CHARS = 2000
 CACHE_SECONDS = 3600
 RATE_LIMIT_PER_MINUTE = 10
@@ -58,7 +63,17 @@ SYSTEM_PROMPT = (
 
 
 class LLMError(Exception):
-    """Any failure talking to the model. Message must never contain secrets."""
+    """Any failure talking to the model. Message must never contain secrets.
+    `retryable` is True for short-lived problems (busy server, rate limit,
+    network blip) and False for ones that will not fix themselves (bad key)."""
+
+    def __init__(self, message, retryable=False):
+        super().__init__(message)
+        self.retryable = retryable
+
+
+def _sleep(seconds):
+    time.sleep(seconds)
 
 
 def provider():
@@ -115,16 +130,24 @@ def _post_json(url, payload, headers):
             return json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         # Status code only: the body and URL may carry details we do not log.
-        raise LLMError(f"model service returned HTTP {exc.code}") from None
+        raise LLMError(f"model service returned HTTP {exc.code}",
+                       retryable=exc.code in RETRYABLE_HTTP) from None
     except (urllib.error.URLError, TimeoutError, OSError):
-        raise LLMError("could not reach the model service") from None
+        raise LLMError("could not reach the model service", retryable=True) from None
     except ValueError:
         raise LLMError("model service sent an unreadable reply") from None
 
 
-def _call_gemini(system, user):
+def _gemini_models():
+    """Main model first, then the optional fallback (if different)."""
+    main = os.environ.get("GEMINI_MODEL", DEFAULT_GEMINI_MODEL).strip()
+    backup = os.environ.get("GEMINI_FALLBACK_MODEL", "").strip()
+    return [main] + ([backup] if backup and backup != main else [])
+
+
+def _call_gemini(system, user, model=None):
     key = os.environ.get("GEMINI_API_KEY", "").strip()
-    url = GEMINI_URL.format(model=urllib.parse.quote(model_name(), safe=""))
+    url = GEMINI_URL.format(model=urllib.parse.quote(model or model_name(), safe=""))
     payload = {
         "systemInstruction": {"parts": [{"text": system}]},
         "contents": [{"role": "user", "parts": [{"text": user}]}],
@@ -153,6 +176,33 @@ def _call_ollama(system, user):
         return data["message"]["content"]
     except (KeyError, TypeError):
         raise LLMError("model returned no answer") from None
+
+
+def _ask_with_retries(system, user):
+    """Try each configured model; retry short-lived failures a few times.
+    Returns (text_or_None, model_used). Never raises."""
+    if provider() == "gemini":
+        models = _gemini_models()
+        call = lambda model: _call_gemini(system, user, model)  # noqa: E731
+    else:
+        models = [model_name()]
+        call = lambda model: _call_ollama(system, user)  # noqa: E731
+
+    started = time.monotonic()
+    for model in models:
+        for attempt in range(MAX_ATTEMPTS_PER_MODEL):
+            try:
+                return call(model), model
+            except LLMError as exc:
+                logger.warning("LLM call failed (model %s, try %d): %s", model, attempt + 1, exc)
+                if not exc.retryable:
+                    return None, model  # a bad key or request will not fix itself
+                if attempt + 1 >= MAX_ATTEMPTS_PER_MODEL:
+                    break
+                if time.monotonic() - started > TOTAL_BUDGET_SECONDS:
+                    return None, model
+                _sleep(RETRY_DELAYS[min(attempt, len(RETRY_DELAYS) - 1)])
+    return None, models[-1]
 
 
 def allow_call(client_id):
@@ -188,15 +238,11 @@ def generate_answer(query, results, use_cache=True):
         if hit:
             return hit
     system, user = build_prompt(query, results)
-    try:
-        raw = _call_gemini(system, user) if provider() == "gemini" else _call_ollama(system, user)
-    except LLMError as exc:
-        logger.warning("LLM call failed: %s", exc)
-        return None
+    raw, used_model = _ask_with_retries(system, user)
     text = re.sub(r"\n{3,}", "\n\n", (raw or "").strip())[:MAX_ANSWER_CHARS]
     if not text:
         return None
-    answer = {"text": text, "provider": provider(), "model": model_name()}
+    answer = {"text": text, "provider": provider(), "model": used_model}
     if use_cache:
         cache.set(_cache_key(query, results), answer, CACHE_SECONDS)
     return answer

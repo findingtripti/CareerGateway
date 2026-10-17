@@ -606,3 +606,8 @@ def mentor_detail(request, pk):
         "careers": mentor.related_careers.filter(is_published=True),
         "stale": mentor_is_stale(mentor),
     })
+
+
+def architecture(request):
+    """PDF section 12: how the assistant, counsellors and mentors fit together."""
+    return render(request, "core/architecture.html")

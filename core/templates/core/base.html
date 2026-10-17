@@ -208,6 +208,7 @@
         @media (max-width: 650px) {
             table.data { display: block; overflow-x: auto; white-space: nowrap; }
         }
+        .site-footer { max-width: 1000px; margin: -20px auto 90px; padding: 0 20px; font-size: 14px; color: var(--cg-muted); display: flex; flex-wrap: wrap; gap: 6px 18px; }
         @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
     </style>
     <script>document.documentElement.classList.add('js');</script>
@@ -251,6 +252,10 @@
 
         {% block content %}{% endblock %}
     </main>
+    <footer class="site-footer">
+        <a href="{% url 'architecture' %}">How Career Gateway works</a>
+        <span>AI for access. Counsellors for guidance. Professionals for experience.</span>
+    </footer>
     {% include "core/_chat_widget.html" %}
     <script>
         (function () {
