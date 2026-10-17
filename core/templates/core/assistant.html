@@ -1,249 +1,77 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Career Assistant | Career Gateway</title>
+{% extends "core/base.html" %}
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+{% block title %}Career Assistant | Career Gateway{% endblock %}
+{% block container_class %}plain{% endblock %}
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f3f6fb;
-            color: #1f2937;
-        }
+{% block extra_head %}
+<style>
+    .intro, .chat-box, .question-card {
+        background: var(--cg-surface); border: 1px solid var(--cg-border);
+        border-radius: 14px; padding: 26px; margin-bottom: 20px; box-shadow: var(--cg-shadow);
+    }
+    .intro h1 { margin: 0 0 8px; font-size: 32px; }
+    .intro > p { color: var(--cg-muted); }
+    .intro h2, .chat-box h2, .question-card h2 { font-size: 20px; margin: 22px 0 8px; }
+    .chat-box h2:first-child, .question-card h2:first-child { margin-top: 0; }
 
-        header {
-            background: #172554;
-            color: white;
-            padding: 20px 7%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
+    .options-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; margin-top: 14px; }
+    .option-card {
+        display: block; padding: 16px; background: var(--cg-bg); border: 1px solid var(--cg-border);
+        border-radius: 12px; color: var(--cg-primary); text-decoration: none;
+        transition: border-color .15s, box-shadow .15s, background .15s;
+    }
+    .option-card:hover, .option-card:focus-visible { border-color: var(--cg-primary); background: var(--cg-primary-tint); box-shadow: var(--cg-shadow); }
+    .option-card.selected { border: 2px solid var(--cg-accent); background: var(--cg-accent-tint); padding: 15px; }
+    .option-card strong { display: block; margin-bottom: 4px; font-size: 16px; }
+    .option-card span { font-size: 13px; color: var(--cg-muted); line-height: 1.5; display: block; }
+    .option-badge {
+        display: inline-block !important; margin-top: 8px; padding: 2px 10px; border-radius: 999px;
+        background: #e2e8f0; color: #334155 !important; font-size: 12px !important; font-weight: 600;
+    }
 
-        header h2 {
-            margin: 0;
-        }
+    /* chat bubbles: same markup as before, scoped so site-wide .message keeps its flash style */
+    .chat-box .message, .question-card .message {
+        padding: 14px 16px; border-radius: 12px; margin: 12px 0; line-height: 1.7;
+        white-space: pre-line; border: 1px solid transparent; font-size: 15px;
+    }
+    .assistant-message { background: var(--cg-primary-tint) !important; border-color: #c9d6f2 !important; color: var(--cg-text); }
+    .student-message { background: var(--cg-accent-tint) !important; border-color: #b7e4de !important; text-align: right; margin-left: 12%; }
 
-        header a {
-            color: white;
-            text-decoration: none;
-            margin-left: 16px;
-        }
-        
-        select {
-          display: block;
-          width: 100%;
-          min-height: 48px;
-          padding: 12px;
-          background-color: #fff;
-          color: #222;
-          border: 1px solid #cbd3e1;
-          border-radius: 8px;
-          font-size: 16px;
-          cursor: pointer;
-          appearance: auto;
-        }
-        .container {
-            max-width: 850px;
-            margin: 35px auto;
-            padding: 0 16px;
-        }
+    .career-card { border: 1px solid var(--cg-border); border-radius: 12px; padding: 18px; margin-top: 14px; background: #fff; }
+    .career-card h3 { margin: 0 0 6px; font-size: 20px; }
+    .career-card p { margin: 8px 0; line-height: 1.65; }
 
-        .intro, .chat-box, .question-card {
-            background: white;
-            border-radius: 14px;
-            padding: 24px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
-        }
+    .question-card label { display: block; font-weight: 600; margin: 4px 0 8px; font-size: 15px; }
+    .question-card textarea, .question-card select {
+        display: block; width: 100%; padding: 12px; border: 1px solid var(--cg-border-strong);
+        border-radius: 10px; font-size: 16px; margin-bottom: 16px; background: #fff; color: var(--cg-text);
+        font-family: inherit; min-height: 48px;
+    }
+    .question-card textarea { min-height: 110px; resize: vertical; }
+    .question-card .checkbox-row { display: flex; align-items: center; gap: 10px; margin: 6px 0 18px; font-weight: 400; }
+    .question-card .checkbox-row input { width: 20px; height: 20px; min-height: 0; margin: 0; accent-color: var(--cg-accent); }
+    .question-card button[type="submit"] {
+        background: var(--cg-accent); color: #fff; border: 1px solid var(--cg-accent); padding: 12px 22px;
+        border-radius: 9px; cursor: pointer; font-size: 15px; font-weight: 600; font-family: inherit;
+    }
+    .question-card button[type="submit"]:hover { background: var(--cg-accent-dark); }
+    .secondary-link { display: inline-block; margin-left: 14px; font-weight: 600; }
 
-        .intro h1 {
-            margin-top: 0;
-            color: #172554;
-        }
+    .notice { font-size: 13px; color: var(--cg-muted); line-height: 1.7; }
+    .intro .notice { padding: 12px 14px; background: var(--cg-bg); border: 1px solid var(--cg-border); border-radius: 10px; margin-top: 18px; }
 
-        .message {
-            padding: 14px;
-            border-radius: 10px;
-            margin: 12px 0;
-            line-height: 1.6;
-            white-space: pre-line;
-        }
+    @media (max-width: 650px) {
+        .intro, .chat-box, .question-card { padding: 18px; }
+        .intro h1 { font-size: 26px; }
+        .student-message { margin-left: 0; }
+        .secondary-link { display: block; margin: 14px 0 0; }
+        .question-card button[type="submit"] { width: 100%; }
+    }
+</style>
+{% endblock %}
 
-        .assistant-message {
-            background: #eef2ff;
-        }
+{% block content %}
 
-        .student-message {
-            background: #dcfce7;
-            text-align: right;
-        }
-
-        .question-card label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        textarea, select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            font-size: 15px;
-            margin-bottom: 14px;
-            background: white;
-        }
-
-        textarea {
-            min-height: 100px;
-            resize: vertical;
-        }
-
-        button {
-            background: #2563eb;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 15px;
-        }
-
-        button:hover {
-            background: #1d4ed8;
-        }
-
-        .secondary-link {
-            display: inline-block;
-            margin-left: 12px;
-            color: #1d4ed8;
-            text-decoration: none;
-        }
-
-        .career-card {
-            border: 1px solid #dbeafe;
-            border-radius: 10px;
-            padding: 16px;
-            margin-top: 12px;
-        }
-
-        .career-card h3 {
-            margin-top: 0;
-            color: #1d4ed8;
-        }
-
-        .notice {
-            font-size: 13px;
-            color: #64748b;
-            line-height: 1.6;
-        }
-
-        @media (max-width: 600px) {
-            header {
-                padding: 18px;
-            }
-
-            header a {
-                margin-left: 0;
-                margin-right: 12px;
-            }
-
-            .intro, .chat-box, .question-card {
-                padding: 18px;
-            }
-
-            .secondary-link {
-                margin: 14px 0 0;
-            }
-        }
-
-        .options-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-            gap: 12px;
-            margin-top: 16px;
-        }
-
-        .option-card {
-            display: block;
-            padding: 14px;
-            background: #f7f9fe;
-            border: 1px solid #d5dcf0;
-            border-radius: 10px;
-            color: #172554;
-            text-decoration: none;
-        }
-
-        .option-card:hover,
-        .option-card:focus-visible {
-            border-color: #172554;
-            background: #eaf0ff;
-        }
-
-        .option-card.selected {
-            border: 2px solid #172554;
-            background: #eaf0ff;
-        }
-
-        .option-card strong {
-            display: block;
-            margin-bottom: 4px;
-        }
-
-        .option-card span {
-            font-size: 13px;
-            color: #4b5563;
-        }
-
-        .checkbox-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 14px 0;
-            font-weight: normal;
-        }
-
-        .checkbox-row input {
-            width: auto;
-            min-height: 0;
-        }
-
-        .option-badge {
-            display: inline-block;
-            margin-top: 6px;
-            padding: 2px 8px;
-            border-radius: 999px;
-            background: #e5e7eb;
-            color: #374151 !important;
-            font-size: 12px !important;
-        }
-    </style>
-</head>
-
-<body>
-    <header>
-        <h2>Career Gateway</h2>
-
-        <nav>
-            <a href="{% url 'home' %}">Home</a>
-            <a href="{% url 'profile' %}">My Profile</a>
-            <a href="{% url 'careers' %}">Explore Careers</a>
-            <a href="{% url 'colleges' %}">Colleges</a>
-            <a href="{% url 'opportunities' %}">Opportunities</a>
-            <a href="{% url 'my_requests' %}">My Requests</a>
-        </nav>
-    </header>
-
-    <main class="container">
         <section class="intro">
             <h1>{{ welcome_title }}</h1>
 
@@ -296,15 +124,11 @@
         <section class="chat-box" id="guidance">
             <h2>Your Career Guidance</h2>
 
-            <div class="message assistant-message">
-                {{ assistant_message }}
-            </div>
+            <div class="message assistant-message">{{ assistant_message }}</div>
 
             {% if student_answer %}
-                <div class="message student-message">
-                    <strong>Your answer:</strong>
-                    {{ student_answer }}
-                </div>
+                <div class="message student-message"><strong>Your answer:</strong>
+{{ student_answer }}</div>
             {% endif %}
 
             {% if recommendations %}
@@ -433,14 +257,10 @@
             </form>
         </section>
 
-        <p class="notice">
-            This assistant helps you explore options using predefined
-            career information and your profile. It does not replace a
-            professional career counsellor, and it cannot tell you
-            which career is right for you.
-        </p>
-    </main>
-    {% include "core/_footer.html" %}
-    {% include "core/_chat_widget.html" %}
-</body>
-</html>
+    <p class="notice" style="margin-top: 8px;">
+        This assistant helps you explore options using predefined
+        career information and your profile. It does not replace a
+        professional career counsellor, and it cannot tell you
+        which career is right for you.
+    </p>
+{% endblock %}

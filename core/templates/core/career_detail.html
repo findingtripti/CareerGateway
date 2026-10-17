@@ -4,93 +4,97 @@
 
 {% block extra_head %}
 <style>
-    .career-section {
-        margin-top: 22px;
-    }
+    .crumb { margin: 0 0 14px; font-size: 14px; }
+    .crumb a { font-weight: 600; text-decoration: none; }
+    .crumb a:hover { text-decoration: underline; }
+    .career-head { padding-bottom: 20px; border-bottom: 1px solid var(--cg-border); margin-bottom: 8px; }
+    .career-head h1 { font-size: 34px; margin-bottom: 10px; }
+    .career-head p { margin: 0; color: var(--cg-muted); font-size: 17px; }
 
-    .career-section h2 {
-        color: #243b6b;
-        font-size: 19px;
-        margin: 0 0 6px;
-    }
-
-    .career-section p {
-        margin: 0;
-    }
+    .section-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 22px; }
+    .career-section { margin-top: 22px; }
+    .section-grid .career-section { margin-top: 0; padding: 18px 20px; background: var(--cg-bg); border: 1px solid var(--cg-border); border-radius: 12px; }
+    .career-section h2 { color: var(--cg-primary); font-size: 18px; margin: 0 0 8px; }
+    .career-section p { margin: 0; line-height: 1.7; }
+    .career-section ul { margin: 0; padding-left: 20px; line-height: 1.8; }
 
     .quality-box {
-        margin-top: 28px;
-        padding: 14px 16px;
-        background: #f7f8fc;
-        border: 1px solid #d5dcf0;
-        border-radius: 8px;
-        font-size: 14px;
+        margin-top: 28px; padding: 14px 16px; background: var(--cg-bg);
+        border: 1px solid var(--cg-border); border-radius: 10px; font-size: 14px; color: var(--cg-muted);
     }
+    .quality-box strong { color: var(--cg-text); }
+    .quality-box p { margin: 6px 0 0; line-height: 1.6; }
 
     .next-step {
-        margin-top: 28px;
-        padding: 16px;
-        background: #eef3ff;
-        border-radius: 8px;
+        margin-top: 28px; padding: 18px 20px; background: var(--cg-accent-tint);
+        border: 1px solid #b7e4de; border-radius: 12px; color: #134e4a; line-height: 1.6;
     }
+    .next-step a { color: var(--cg-accent-dark); font-weight: 600; }
 
-    .faq dt {
-        font-weight: bold;
-        margin-top: 12px;
-    }
+    .faq { margin: 0; }
+    .faq dt { font-weight: 600; margin-top: 14px; color: var(--cg-text); }
+    .faq dt:first-child { margin-top: 0; }
+    .faq dd { margin: 4px 0 0; line-height: 1.7; color: var(--cg-muted); }
 
-    .faq dd {
-        margin: 4px 0 0;
-        line-height: 1.6;
+    .cta-row { margin-top: 24px; }
+
+    @media (max-width: 800px) {
+        .section-grid { grid-template-columns: 1fr; }
+        .career-head h1 { font-size: 28px; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-    <p><a href="{% url 'careers' %}">&larr; All careers</a></p>
+    <p class="crumb"><a href="{% url 'careers' %}">&larr; All careers</a></p>
 
-    <h1>{{ career.title }}</h1>
-    <p>{{ career.summary }}</p>
+    <header class="career-head">
+        <span class="eyebrow">Career profile</span>
+        <h1>{{ career.title }}</h1>
+        <p>{{ career.summary }}</p>
+    </header>
 
-    <section class="career-section">
-        <h2>What professionals do</h2>
-        <p>{{ career.what_professionals_do }}</p>
-    </section>
+    <div class="section-grid">
+        <section class="career-section">
+            <h2>What professionals do</h2>
+            <p>{{ career.what_professionals_do }}</p>
+        </section>
 
-    <section class="career-section">
-        <h2>Required education</h2>
-        <p>{{ career.required_education }}</p>
-    </section>
+        <section class="career-section">
+            <h2>Required education</h2>
+            <p>{{ career.required_education }}</p>
+        </section>
 
-    <section class="career-section">
-        <h2>Entrance examinations</h2>
-        <p>{{ career.entrance_exams }}</p>
-    </section>
+        <section class="career-section">
+            <h2>Entrance examinations</h2>
+            <p>{{ career.entrance_exams }}</p>
+        </section>
 
-    <section class="career-section">
-        <h2>Important skills</h2>
-        <p>{{ career.important_skills }}</p>
-    </section>
+        <section class="career-section">
+            <h2>Important skills</h2>
+            <p>{{ career.important_skills }}</p>
+        </section>
 
-    <section class="career-section">
-        <h2>Career pathway</h2>
-        <p>{{ career.career_pathway }}</p>
-    </section>
+        <section class="career-section">
+            <h2>Career pathway</h2>
+            <p>{{ career.career_pathway }}</p>
+        </section>
 
-    <section class="career-section">
-        <h2>Possible roles</h2>
-        <p>{{ career.possible_roles }}</p>
-    </section>
+        <section class="career-section">
+            <h2>Possible roles</h2>
+            <p>{{ career.possible_roles }}</p>
+        </section>
 
-    <section class="career-section">
-        <h2>Higher education options</h2>
-        <p>{{ career.higher_education_options }}</p>
-    </section>
+        <section class="career-section">
+            <h2>Higher education options</h2>
+            <p>{{ career.higher_education_options }}</p>
+        </section>
 
-    <section class="career-section">
-        <h2>Work environments</h2>
-        <p>{{ career.work_environments }}</p>
-    </section>
+        <section class="career-section">
+            <h2>Work environments</h2>
+            <p>{{ career.work_environments }}</p>
+        </section>
+    </div>
 
     <section class="career-section">
         <h2>Professional insights</h2>
@@ -139,8 +143,8 @@
         </section>
     {% endif %}
 
-    <p>
-        <a class="button" href="{% url 'career_enquiry' career.slug %}">Ask a question about this career</a>
+    <p class="cta-row">
+        <a class="button accent" href="{% url 'career_enquiry' career.slug %}">Ask a question about this career</a>
     </p>
 
     <div class="quality-box">

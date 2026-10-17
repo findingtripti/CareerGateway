@@ -1,202 +1,84 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Career Gateway | Explore Your Future</title>
+{% extends "core/base.html" %}
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+{% block title %}Career Gateway | Explore Your Future{% endblock %}
+{% block container_class %}plain{% endblock %}
 
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f6fb;
-            color: #222;
-            margin: 0;
-            padding: 0;
-        }
+{% block extra_head %}
+<style>
+    .hero {
+        background: linear-gradient(135deg, var(--cg-primary-dark) 0%, var(--cg-primary) 70%, #2a5298 100%);
+        color: #fff; border-radius: 20px; padding: 56px 44px; position: relative; overflow: hidden;
+        box-shadow: var(--cg-shadow);
+    }
+    .hero::after {
+        content: ""; position: absolute; right: -90px; top: -90px; width: 320px; height: 320px;
+        border-radius: 50%; background: radial-gradient(circle, rgba(45, 212, 191, .35), transparent 70%);
+        pointer-events: none;
+    }
+    .hero > * { position: relative; z-index: 1; }
+    .hero .eyebrow { color: #5eead4; }
+    .hero h1 { color: #fff; font-size: 42px; margin: 10px 0 14px; max-width: 18em; }
+    .hero p { color: #dbe4f7; font-size: 18px; max-width: 40em; margin: 0; }
+    .hero .welcome {
+        margin-top: 22px; padding: 14px 18px; border-radius: 12px; max-width: 40em;
+        background: rgba(255, 255, 255, .12); border: 1px solid rgba(255, 255, 255, .25);
+    }
+    .hero .welcome p { font-size: 15px; margin: 4px 0 0; }
+    .hero .note { margin-top: 18px; font-size: 15px; color: #c3d0ec; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; align-items: center; }
+    .logout-form { display: inline; margin: 0; }
 
-        .navbar {
-            background: #243b6b;
-            padding: 16px 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
+    .section-head { margin: 44px 0 18px; }
+    .section-head h2 { font-size: 26px; margin: 4px 0 6px; }
+    .section-head p { margin: 0; color: var(--cg-muted); }
 
-        .brand {
-            color: white;
-            font-size: 21px;
-            font-weight: bold;
-            text-decoration: none;
-        }
+    .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; counter-reset: step; }
+    .step { position: relative; padding-top: 58px; }
+    .step::before {
+        counter-increment: step; content: counter(step);
+        position: absolute; top: 20px; left: 22px; width: 30px; height: 30px; border-radius: 50%;
+        display: grid; place-items: center; background: var(--cg-accent); color: #fff; font-weight: 700; font-size: 14px;
+    }
+    .step h3 { margin: 0 0 6px; font-size: 18px; }
+    .step p { margin: 0; color: var(--cg-muted); font-size: 15px; }
 
-        .nav-links {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
+    .features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    .feature { display: flex; flex-direction: column; transition: box-shadow .2s, transform .2s, border-color .2s; }
+    .feature:hover { box-shadow: var(--cg-shadow-hover); transform: translateY(-2px); border-color: #c9d6f2; }
+    .feature .icon {
+        width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center;
+        background: var(--cg-primary-tint); color: var(--cg-primary); margin-bottom: 14px;
+    }
+    .feature .icon svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .feature h3 { margin: 0 0 8px; font-size: 18px; }
+    .feature p { margin: 0 0 14px; color: var(--cg-muted); font-size: 15px; line-height: 1.6; flex: 1; }
+    .feature .links { display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 15px; }
+    .feature .links a { text-decoration: none; }
+    .feature .links a:hover { text-decoration: underline; }
 
-        .nav-links a {
-            color: white;
-            text-decoration: none;
-            padding: 9px 12px;
-            border-radius: 6px;
-            font-size: 14px;
-        }
+    .trust { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 44px; }
+    .trust .card { background: var(--cg-accent-tint); border-color: #b7e4de; box-shadow: none; }
+    .trust h3 { margin: 0 0 6px; font-size: 16px; color: var(--cg-accent-dark); }
+    .trust p { margin: 0; font-size: 14px; color: #134e4a; line-height: 1.6; }
 
-        .nav-links a:hover {
-            background: #3a548a;
-        }
+    .disclaimer { margin-top: 32px; font-size: 13px; color: var(--cg-muted); }
 
-        .container {
-            max-width: 900px;
-            margin: 48px auto;
-            padding: 32px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-        }
+    @media (max-width: 900px) {
+        .features, .steps, .trust { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 650px) {
+        .hero { padding: 36px 22px; border-radius: 16px; }
+        .hero h1 { font-size: 30px; }
+        .hero p { font-size: 16px; }
+        .features, .steps, .trust { grid-template-columns: 1fr; }
+        .actions .button { width: 100%; }
+        .logout-form, .logout-form .button { width: 100%; }
+    }
+</style>
+{% endblock %}
 
-        .eyebrow {
-            color: #526b9c;
-            font-size: 13px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        h1 {
-            color: #243b6b;
-            font-size: 34px;
-            line-height: 1.25;
-        }
-
-        p {
-            line-height: 1.7;
-        }
-
-        .actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 24px;
-        }
-
-        .button {
-            display: inline-block;
-            padding: 12px 17px;
-            border-radius: 6px;
-            background: #243b6b;
-            color: white;
-            border: 1px solid #243b6b;
-            text-decoration: none;
-            cursor: pointer;
-            font-size: 15px;
-        }
-
-        .button.secondary {
-            background: #e8edf8;
-            color: #243b6b;
-            border-color: #e8edf8;
-        }
-
-        .features {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 16px;
-            margin-top: 30px;
-        }
-
-        .feature {
-            padding: 18px;
-            background: #f7f8fc;
-            border: 1px solid #e5e9f3;
-            border-radius: 9px;
-        }
-
-        .feature h3 {
-            color: #243b6b;
-            margin-top: 0;
-            font-size: 17px;
-        }
-
-        .feature p {
-            font-size: 14px;
-            margin-bottom: 0;
-        }
-
-        .welcome {
-            background: #eef3ff;
-            padding: 14px 16px;
-            border-radius: 8px;
-            margin-top: 22px;
-        }
-
-        .logout-form {
-            display: inline;
-        }
-
-        @media (max-width: 650px) {
-            .container {
-                margin: 24px 14px;
-                padding: 22px;
-            }
-
-            h1 {
-                font-size: 28px;
-            }
-
-            .features {
-                grid-template-columns: 1fr;
-            }
-
-            .navbar {
-                padding: 14px 16px;
-            }
-        }
-        .nav-toggle { display: none; background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.5); border-radius: 8px; padding: 8px 12px; font-size: 15px; cursor: pointer; }
-        @media (max-width: 960px) {
-            .nav-toggle { display: inline-block; }
-            .js .nav-links { display: none; width: 100%; flex-direction: column; align-items: stretch; gap: 2px; }
-            .js .nav-links.open { display: flex; }
-            .js .nav-links a { padding: 12px; font-size: 16px; }
-        }
-    </style>
-    <script>document.documentElement.classList.add('js');</script>
-</head>
-
-<body>
-    <nav class="navbar">
-        <a class="brand" href="{% url 'home' %}">Career Gateway</a>
-        <button type="button" class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="nav-links">Menu</button>
-
-        <div class="nav-links" id="nav-links">
-            <a href="{% url 'home' %}">Home</a>
-            <a href="{% url 'careers' %}">Explore Careers</a>
-            <a href="{% url 'colleges' %}">Colleges</a>
-            <a href="{% url 'opportunities' %}">Opportunities</a>
-            <a href="{% url 'mentors' %}">Mentors</a>
-            <a href="{% url 'school' %}">Schools</a>
-            <a href="{% url 'ask' %}">Ask</a>
-
-            {% if user.is_authenticated %}
-                <a href="{% url 'assistant' %}">Career Assistant</a>
-                <a href="{% url 'my_requests' %}">My Requests</a>
-                <a href="{% url 'profile' %}">My Profile</a>
-                {% if user.is_staff %}<a href="{% url 'lead_dashboard' %}">Lead Dashboard</a><a href="{% url 'school_dashboard' %}">School Dashboard</a>{% endif %}
-            {% else %}
-                <a href="{% url 'login' %}">Log In</a>
-            {% endif %}
-        </div>
-    </nav>
-
-    <main class="container">
+{% block content %}
+    <section class="hero">
         <span class="eyebrow">Your future, your journey</span>
 
         <h1>Welcome to Career Gateway</h1>
@@ -216,134 +98,175 @@
             </div>
 
             <div class="actions">
-                <a href="{% url 'assistant' %}" class="button">
+                <a href="{% url 'assistant' %}" class="button light">
                     Get Career Guidance
                 </a>
 
-                <a href="{% url 'careers' %}" class="button secondary">
+                <a href="{% url 'careers' %}" class="button outline-light">
                     Explore Careers
                 </a>
 
-                <a href="{% url 'profile' %}" class="button secondary">
+                <a href="{% url 'profile' %}" class="button outline-light">
                     Update My Profile
                 </a>
 
                 <form method="POST" action="{% url 'logout' %}"
                       class="logout-form">
                     {% csrf_token %}
-                    <button type="submit" class="button">
+                    <button type="submit" class="button outline-light">
                         Log Out
                     </button>
                 </form>
             </div>
         {% else %}
             <div class="actions">
-                <a href="{% url 'signup' %}" class="button">
+                <a href="{% url 'signup' %}" class="button light">
                     Get Started
                 </a>
 
-                <a href="{% url 'login' %}" class="button secondary">
+                <a href="{% url 'login' %}" class="button outline-light">
                     Log In
                 </a>
 
-                <a href="{% url 'careers' %}" class="button secondary">
+                <a href="{% url 'careers' %}" class="button outline-light">
                     Explore Careers
                 </a>
             </div>
 
-            <p>
+            <p class="note">
                 Create an account to save your profile and access
                 personalized, rule-based career guidance.
             </p>
         {% endif %}
+    </section>
 
-        <section class="features">
-            <div class="feature">
-                <h3>Explore Careers</h3>
-                <p>
-                    Learn about career options, required skills,
-                    education pathways and possible roles.
-                </p>
+    <div class="section-head">
+        <span class="eyebrow">How it works</span>
+        <h2>From question to next step, in three moves</h2>
+    </div>
+    <section class="steps" aria-label="How it works">
+        <div class="card step">
+            <h3>Tell us about you</h3>
+            <p>Add your education, interests and budget. You decide what to share.</p>
+        </div>
+        <div class="card step">
+            <h3>See options with reasons</h3>
+            <p>Careers, colleges and scholarships come with the reason they were suggested.</p>
+        </div>
+        <div class="card step">
+            <h3>Talk to a real person</h3>
+            <p>For decisions that matter, ask for a counsellor or a working professional.</p>
+        </div>
+    </section>
+
+    <div class="section-head">
+        <span class="eyebrow">Explore</span>
+        <h2>Everything in one place</h2>
+    </div>
+
+    <section class="features">
+        <div class="card feature">
+            <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg></span>
+            <h3>Explore Careers</h3>
+            <p>
+                Learn about career options, required skills,
+                education pathways and possible roles.
+            </p>
+            <div class="links">
                 <a href="{% url 'careers' %}">Explore options →</a>
                 <a href="{% url 'assistant' %}">Career Assistant</a>
             </div>
+        </div>
 
-            <div class="feature">
-                <h3>Build Your Profile</h3>
-                <p>
-                    Add your education, interests, skills and goals
-                    to help guide your career exploration.
-                </p>
+        <div class="card feature">
+            <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
+            <h3>Build Your Profile</h3>
+            <p>
+                Add your education, interests, skills and goals
+                to help guide your career exploration.
+            </p>
 
+            <div class="links">
                 {% if user.is_authenticated %}
                     <a href="{% url 'profile' %}">View profile →</a>
                 {% else %}
                     <a href="{% url 'signup' %}">Get started →</a>
                 {% endif %}
             </div>
+        </div>
 
-            <div class="feature">
-                <h3>Guided Career Assistant</h3>
-                <p>
-                    Answer a few questions about your interests and
-                    priorities to receive career suggestions.
-                </p>
+        <div class="card feature">
+            <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12z"/></svg></span>
+            <h3>Guided Career Assistant</h3>
+            <p>
+                Answer a few questions about your interests and
+                priorities to receive career suggestions.
+            </p>
 
+            <div class="links">
                 {% if user.is_authenticated %}
                     <a href="{% url 'assistant' %}">Get guidance →</a>
                 {% else %}
                     <a href="{% url 'login' %}">Log in to continue →</a>
                 {% endif %}
             </div>
-        </section>
+        </div>
 
-        <section class="features">
-            <div class="feature">
-                <h3>Colleges and Courses</h3>
-                <p>
-                    Browse colleges from our database. Every record shows
-                    whether it is verified and when it was last checked.
-                </p>
+        <div class="card feature">
+            <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 9l9-5 9 5-9 5z"/><path d="M7 11.5V16c0 1.2 2.2 2.5 5 2.5s5-1.3 5-2.5v-4.5"/></svg></span>
+            <h3>Colleges and Courses</h3>
+            <p>
+                Browse colleges from our database. Every record shows
+                whether it is verified and when it was last checked.
+            </p>
+            <div class="links">
                 <a href="{% url 'colleges' %}">Browse colleges →</a>
             </div>
+        </div>
 
-            <div class="feature">
-                <h3>Scholarships and Opportunities</h3>
-                <p>
-                    Find scholarships, internships and programs, with
-                    deadlines and eligibility.
-                </p>
+        <div class="card feature">
+            <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="6"/><path d="M8.5 14.5L7 22l5-3 5 3-1.5-7.5"/></svg></span>
+            <h3>Scholarships and Opportunities</h3>
+            <p>
+                Find scholarships, internships and programs, with
+                deadlines and eligibility.
+            </p>
+            <div class="links">
                 <a href="{% url 'opportunities' %}">See opportunities →</a>
             </div>
+        </div>
 
-            <div class="feature">
-                <h3>Mentors and Counsellors</h3>
-                <p>
-                    Talk to a working professional or ask for a career
-                    counsellor for a decision that matters.
-                </p>
+        <div class="card feature">
+            <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"/><path d="M18 14.3c2.2.7 3.5 2.6 3.5 5.7"/></svg></span>
+            <h3>Mentors and Counsellors</h3>
+            <p>
+                Talk to a working professional or ask for a career
+                counsellor for a decision that matters.
+            </p>
+            <div class="links">
                 <a href="{% url 'mentors' %}">Meet mentors →</a>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <p style="margin-top: 28px; font-size: 13px; color: #666;">
-            Career Gateway provides exploratory guidance. Its current
-            assistant uses predefined rules and career information;
-            it does not replace professional career counselling.
-        </p>
-    </main>
-    {% include "core/_footer.html" %}
-    {% include "core/_chat_widget.html" %}
-    <script>
-        (function () {
-            var btn = document.getElementById("nav-toggle");
-            var links = document.getElementById("nav-links");
-            if (!btn || !links) { return; }
-            btn.addEventListener("click", function () {
-                var open = links.classList.toggle("open");
-                btn.setAttribute("aria-expanded", String(open));
-            });
-        })();
-    </script>
-</body>
-</html>
+    <section class="trust" aria-label="Our principles">
+        <div class="card">
+            <h3>Reasons, not black boxes</h3>
+            <p>Matching follows clear rules. Every suggestion says why it was made.</p>
+        </div>
+        <div class="card">
+            <h3>Honest about data</h3>
+            <p>Records show if they are verified, when they were checked, and if they are demo data.</p>
+        </div>
+        <div class="card">
+            <h3>Humans for big decisions</h3>
+            <p>The assistant helps you explore. Counsellors and mentors help you decide.</p>
+        </div>
+    </section>
+
+    <p class="disclaimer">
+        Career Gateway provides exploratory guidance. Its current
+        assistant uses predefined rules and career information;
+        it does not replace professional career counselling.
+    </p>
+{% endblock %}

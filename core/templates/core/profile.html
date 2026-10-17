@@ -1,140 +1,63 @@
+{% extends "core/base.html" %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Profile | Career Gateway</title>
+{% block title %}My Profile | Career Gateway{% endblock %}
+{% block container_class %}plain{% endblock %}
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f6fb;
-            color: #222;
-            margin: 0;
-            padding: 30px 16px;
-        }
+{% block extra_head %}
+<style>
+    .profile-wrap { max-width: 860px; margin: 0 auto; }
+    .container.plain > div[aria-live] { max-width: 860px; margin: 0 auto 12px; }
+    .profile-head { margin-bottom: 20px; }
+    .profile-head h1 { font-size: 32px; margin: 4px 0 8px; }
+    .profile-head p { margin: 0; color: var(--cg-muted); }
 
-        .container {
-            max-width: 700px;
-            margin: 0 auto;
-        }
+    .panel { background: var(--cg-surface); border: 1px solid var(--cg-border); border-radius: 14px; box-shadow: var(--cg-shadow); padding: 26px; margin-bottom: 20px; }
+    .panel h2 { margin: 0 0 16px; font-size: 20px; }
 
-        .card {
-            background: white;
-            padding: 28px;
-            border-radius: 12px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-        }
+    .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; }
+    .field { padding: 12px 0; border-bottom: 1px solid var(--cg-border); }
+    .field.wide { grid-column: 1 / -1; }
+    .field .label { font-weight: 600; display: block; margin-bottom: 4px; font-size: 13px; color: var(--cg-muted); text-transform: uppercase; letter-spacing: .04em; }
+    .field .value { color: var(--cg-text); overflow-wrap: anywhere; line-height: 1.6; }
 
-        h1 {
-            margin-top: 0;
-            color: #243b6b;
-        }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
+    .form-grid .form-field.wide { grid-column: 1 / -1; }
+    .save-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 6px; }
 
-        h2 {
-            margin-top: 26px;
-            color: #243b6b;
-            font-size: 20px;
-        }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .actions form { margin: 0; }
 
-        .field {
-            padding: 12px 0;
-            border-bottom: 1px solid #e8eaf0;
-        }
+    @media (max-width: 650px) {
+        .panel { padding: 20px; }
+        .detail-grid, .form-grid { grid-template-columns: 1fr; }
+        .profile-head h1 { font-size: 26px; }
+        .save-row .button, .actions .button, .actions form { width: 100%; }
+    }
+</style>
+{% endblock %}
 
-        .label {
-            font-weight: bold;
-            display: block;
-            margin-bottom: 6px;
-        }
+{% block content %}
+<div class="profile-wrap">
+    <div class="profile-head">
+        <span class="eyebrow">Your account</span>
+        <h1>My Career Profile</h1>
+        <p>
+            Your profile will help Career Gateway understand
+            your interests and provide relevant career guidance.
+        </p>
+    </div>
 
-        .value {
-            color: #555;
-            overflow-wrap: anywhere;
-        }
+    <section class="panel">
+        <h2>Saved Details</h2>
 
-        input {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 11px;
-            border: 1px solid #ccd2df;
-            border-radius: 6px;
-            font-size: 15px;
-        }
-
-        button, .button {
-            display: inline-block;
-            margin-top: 16px;
-            margin-right: 8px;
-            padding: 11px 17px;
-            border: none;
-            border-radius: 6px;
-            background: #243b6b;
-            color: white;
-            font-size: 15px;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        .secondary {
-            background: #e8edf8;
-            color: #243b6b;
-        }
-
-        .message {
-            padding: 12px;
-            background: #d4edda;
-            color: #155724;
-            border-radius: 6px;
-            margin-bottom: 12px;
-        }
-
-        .actions {
-            margin-top: 24px;
-        }
-
-        
-        textarea {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 11px;
-            border: 1px solid #ccd2df;
-            border-radius: 6px;
-            font-size: 15px;
-            font-family: Arial, sans-serif;
-            resize: vertical;
-        }
-
-    </style>
-</head>
-
-<body>
-    <div class="container">
-        <div class="card">
-
-            <h1>My Career Profile</h1>
-
-            {% if messages %}
-                {% for message in messages %}
-                    <p class="message">{{ message }}</p>
-                {% endfor %}
-            {% endif %}
-
-            <p>
-                Your profile will help Career Gateway understand
-                your interests and provide relevant career guidance.
-            </p>
-
-            <h2>Saved Details</h2>
-
+        <div class="detail-grid">
             <div class="field">
                 <span class="label">Full Name</span>
                 <span class="value">
                     {{ profile.full_name|default:"Not added yet" }}
                 </span>
             </div>
-            
+
             <div class="field">
                 <span class="label">Age</span>
                 <span class="value">
@@ -149,36 +72,6 @@
                 </span>
             </div>
 
-            
-            <div class="field">
-                <span class="label">Academic Background</span>
-                <span class="value">
-                     {{ profile.academic_background|default:"Not added yet" }}
-                </span>
-            </div>
-
-            <div class="field">
-                <span class="label">Skills</span>
-                <span class="value">
-                    {{ profile.skills|default:"Not added yet" }}
-                </span>
-            </div>
-
-
-            <div class="field">
-                <span class="label">Subjects and Interests</span>
-                <span class="value">
-                    {{ profile.subjects_and_interests|default:"Not added yet" }}
-                </span>
-            </div>
-
-            <div class="field">
-                <span class="label">Career Interests</span>
-                <span class="value">
-                    {{ profile.career_interests|default:"Not added yet" }}
-                </span>
-            </div>
-            
             <div class="field">
                 <span class="label">Preferred Location</span>
                 <span class="value">
@@ -204,22 +97,52 @@
                 </span>
             </div>
 
-            <div class="field">
+            <div class="field wide">
+                <span class="label">Academic Background</span>
+                <span class="value">
+                     {{ profile.academic_background|default:"Not added yet" }}
+                </span>
+            </div>
+
+            <div class="field wide">
+                <span class="label">Skills</span>
+                <span class="value">
+                    {{ profile.skills|default:"Not added yet" }}
+                </span>
+            </div>
+
+            <div class="field wide">
+                <span class="label">Subjects and Interests</span>
+                <span class="value">
+                    {{ profile.subjects_and_interests|default:"Not added yet" }}
+                </span>
+            </div>
+
+            <div class="field wide">
+                <span class="label">Career Interests</span>
+                <span class="value">
+                    {{ profile.career_interests|default:"Not added yet" }}
+                </span>
+            </div>
+
+            <div class="field wide">
                 <span class="label">Career Goals</span>
                 <span class="value">
                     {{ profile.career_goals|default:"Not added yet" }}
                 </span>
             </div>
+        </div>
+    </section>
 
-            <h2>Edit Your Details</h2>
+    <section class="panel">
+        <h2>Edit Your Details</h2>
 
-            <form method="post">
-                {% csrf_token %}
+        <form method="post">
+            {% csrf_token %}
 
-                <div class="field">
-                    <label class="label" for="full_name">
-                        Full Name
-                    </label>
+            <div class="form-grid">
+                <div class="form-field">
+                    <label for="full_name">Full Name</label>
                     <input
                         type="text"
                         id="full_name"
@@ -229,28 +152,22 @@
                     >
                 </div>
 
-                
-                <div class="field">
-                    <label class="label" for="age">
-                       Age
-                    </label>
+                <div class="form-field">
+                    <label for="age">Age</label>
                     <input
                         type="number"
-                         id="age"
-                         name="age"
-                         min="1"
-                         max="120"
-                         step="1"
-                         value="{{ profile.age|default_if_none:'' }}"
-                         placeholder="Enter your age"
+                        id="age"
+                        name="age"
+                        min="1"
+                        max="120"
+                        step="1"
+                        value="{{ profile.age|default_if_none:'' }}"
+                        placeholder="Enter your age"
                     >
                 </div>
 
-
-                <div class="field">
-                    <label class="label" for="current_education">
-                        Current Education
-                    </label>
+                <div class="form-field">
+                    <label for="current_education">Current Education</label>
                     <input
                         type="text"
                         id="current_education"
@@ -260,11 +177,43 @@
                     >
                 </div>
 
-                
-                <div class="field">
-                    <label class="label" for="academic_background">
-                        Academic Background
-                    </label>
+                <div class="form-field">
+                    <label for="preferred_location">Preferred Location</label>
+                    <input
+                        type="text"
+                        id="preferred_location"
+                        name="preferred_location"
+                        value="{{ profile.preferred_location }}"
+                        placeholder="e.g. Delhi, Noida, Remote"
+                    >
+                </div>
+
+                <div class="form-field">
+                    <label for="budget">Budget (₹)</label>
+                    <input
+                        type="number"
+                        id="budget"
+                        name="budget"
+                        min="0"
+                        step="0.01"
+                        value="{{ profile.budget|default_if_none:'' }}"
+                        placeholder="e.g. 50000"
+                    >
+                </div>
+
+                <div class="form-field">
+                    <label for="entrance_exams">Entrance Exams</label>
+                    <input
+                        type="text"
+                        id="entrance_exams"
+                        name="entrance_exams"
+                        value="{{ profile.entrance_exams }}"
+                        placeholder="e.g. JEE Main, CUET, NEET, Not decided"
+                    >
+                </div>
+
+                <div class="form-field wide">
+                    <label for="academic_background">Academic Background</label>
                     <textarea
                         id="academic_background"
                         name="academic_background"
@@ -273,10 +222,8 @@
                     >{{ profile.academic_background }}</textarea>
                 </div>
 
-                <div class="field">
-                    <label class="label" for="skills">
-                         Skills
-                    </label>
+                <div class="form-field wide">
+                    <label for="skills">Skills</label>
                     <textarea
                         id="skills"
                         name="skills"
@@ -285,11 +232,8 @@
                     >{{ profile.skills }}</textarea>
                 </div>
 
-                
-                <div class="field">
-                    <label class="label" for="subjects_and_interests">
-                        Subjects and Interests
-                    </label>
+                <div class="form-field wide">
+                    <label for="subjects_and_interests">Subjects and Interests</label>
                     <input
                         type="text"
                         id="subjects_and_interests"
@@ -299,99 +243,46 @@
                     >
                 </div>
 
-                
-                 <div class="field">
-                     <label class="label" for="career_interests">
-                          Career Interests
-                     </label>
-                     <input
-                         type="text"
-                         id="career_interests"
-                         name="career_interests"
-                         value="{{ profile.career_interests }}"
-                         placeholder="e.g. Software Development, Data Science"
-    >
-                 </div>
-
-                 <div class="field">
-                      <label class="label" for="preferred_location">
-                          Preferred Location
-                      </label>
-                      <input
-                          type="text"
-                          id="preferred_location"
-                          name="preferred_location"
-                          value="{{ profile.preferred_location }}"
-                          placeholder="e.g. Delhi, Noida, Remote"
-                       >
-                 </div>
-
-                 <div class="field">
-                    <label class="label" for="budget">
-                        Budget (₹)
-                    </label>
+                <div class="form-field wide">
+                    <label for="career_interests">Career Interests</label>
                     <input
-                       type="number"
-                       id="budget"
-                       name="budget"
-                       min="0"
-                       step="0.01"
-                       value="{{ profile.budget|default_if_none:'' }}"
-                       placeholder="e.g. 50000"
+                        type="text"
+                        id="career_interests"
+                        name="career_interests"
+                        value="{{ profile.career_interests }}"
+                        placeholder="e.g. Software Development, Data Science"
                     >
-                 </div>
+                </div>
 
-                 
-                 <div class="field">
-                     <label class="label" for="entrance_exams">
-                         Entrance Exams
-                     </label>
-                     <input
-                         type="text"
-                         id="entrance_exams"
-                         name="entrance_exams"
-                         value="{{ profile.entrance_exams }}"
-                         placeholder="e.g. JEE Main, CUET, NEET, Not decided"
-                     >
-        </div>
-        
-        
-        <div class="field">
-            <label class="label" for="career_goals">
-                Career Goals
-            </label>
-            <input
-                type="text"
-                id="career_goals"
-                name="career_goals"
-                value="{{ profile.career_goals }}"
-                placeholder="e.g. Become a Data Scientist"
-            >
-        </div>
-
-
-
-                 <button type="submit">Save Profile</button>
-             </form>
-
-             <div class="actions">
-                <a href="{% url 'home' %}" class="button">
-                    Back to Home
-                </a>
-
-                <form method="post"
-                      action="{% url 'logout' %}"
-                      style="display: inline;">
-                    {% csrf_token %}
-                    <button type="submit" class="secondary">
-                        Log Out
-                    </button>
-                </form>
+                <div class="form-field wide">
+                    <label for="career_goals">Career Goals</label>
+                    <input
+                        type="text"
+                        id="career_goals"
+                        name="career_goals"
+                        value="{{ profile.career_goals }}"
+                        placeholder="e.g. Become a Data Scientist"
+                    >
+                </div>
             </div>
 
-        </div>
+            <div class="save-row">
+                <button type="submit" class="button accent">Save Profile</button>
+            </div>
+        </form>
+    </section>
+
+    <div class="actions">
+        <a href="{% url 'home' %}" class="button secondary">
+            Back to Home
+        </a>
+
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="button secondary">
+                Log Out
+            </button>
+        </form>
     </div>
-    {% include "core/_footer.html" %}
-    {% include "core/_chat_widget.html" %}
-</body>
-</html>
+</div>
+{% endblock %}

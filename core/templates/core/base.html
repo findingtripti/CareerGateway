@@ -6,240 +6,238 @@
     <title>{% block title %}Career Gateway{% endblock %}</title>
 
     <style>
-        * {
-            box-sizing: border-box;
+        /* ================= Design tokens (change colours here only) ================= */
+        :root {
+            --cg-primary: #1e3a8a;
+            --cg-primary-dark: #172554;
+            --cg-primary-soft: #2f4fa8;
+            --cg-primary-tint: #eef3ff;
+            --cg-accent: #0f766e;
+            --cg-accent-dark: #115e59;
+            --cg-accent-tint: #e6f6f4;
+            --cg-bg: #f8fafc;
+            --cg-surface: #ffffff;
+            --cg-border: #e2e8f0;
+            --cg-border-strong: #cbd5e1;
+            --cg-text: #0f172a;
+            --cg-muted: #475569;
+            --cg-success: #15803d;
+            --cg-success-tint: #dcfce7;
+            --cg-warn: #b45309;
+            --cg-warn-tint: #fef3c7;
+            --cg-danger: #b91c1c;
+            --cg-danger-tint: #fee2e2;
+            --cg-radius: 12px;
+            --cg-shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 6px 18px rgba(15, 23, 42, .06);
+            --cg-shadow-hover: 0 2px 4px rgba(15, 23, 42, .08), 0 12px 28px rgba(15, 23, 42, .10);
         }
+
+        * { box-sizing: border-box; }
 
         body {
-            font-family: Arial, sans-serif;
-            background: #f4f6fb;
-            color: #222;
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+            background: var(--cg-bg);
+            color: var(--cg-text);
             margin: 0;
             padding: 0;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
         }
 
-        .navbar {
-            background: #243b6b;
-            padding: 16px 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-
-        .brand {
-            color: white;
-            font-size: 21px;
-            font-weight: bold;
-            text-decoration: none;
-        }
-
-        .nav-links {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .nav-links a {
-            color: white;
-            text-decoration: none;
-            padding: 9px 12px;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-
-        .nav-links a:hover,
-        .nav-links a:focus-visible {
-            background: #3a548a;
-        }
-
-        a:focus-visible,
-        button:focus-visible,
-        input:focus-visible {
-            outline: 3px solid #f5a623;
+        a { color: var(--cg-primary); }
+        a:hover { color: var(--cg-primary-soft); }
+        a:focus-visible, button:focus-visible, input:focus-visible,
+        select:focus-visible, textarea:focus-visible, summary:focus-visible {
+            outline: 3px solid var(--cg-accent);
             outline-offset: 2px;
         }
 
+        h1, h2, h3 { color: var(--cg-primary); letter-spacing: -.01em; }
+        h1 { font-size: 30px; line-height: 1.2; margin-top: 0; }
+        p { line-height: 1.7; }
+
+        /* ================= Navbar ================= */
+        .navbar {
+            position: sticky; top: 0; z-index: 40;
+            background: linear-gradient(90deg, var(--cg-primary-dark), var(--cg-primary));
+            box-shadow: 0 2px 12px rgba(15, 23, 42, .25);
+        }
+        .nav-inner {
+            max-width: 1240px; margin: 0 auto; padding: 10px 24px;
+            display: flex; justify-content: space-between; align-items: center;
+            gap: 16px; flex-wrap: wrap;
+        }
+        .brand {
+            display: inline-flex; align-items: center; gap: 10px;
+            color: #fff; font-size: 20px; font-weight: 700; text-decoration: none;
+        }
+        .brand:hover { color: #fff; }
+        .brand-mark {
+            display: inline-grid; place-items: center; width: 34px; height: 34px;
+            border-radius: 9px; background: #fff; color: var(--cg-primary);
+            font-size: 14px; font-weight: 800; letter-spacing: .02em;
+        }
+        .nav-links { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+        .nav-links a {
+            color: #e2e8f0; text-decoration: none; padding: 8px 11px;
+            border-radius: 8px; font-size: 14px; font-weight: 500;
+            transition: background .15s, color .15s;
+        }
+        .nav-links a:hover, .nav-links a:focus-visible { background: rgba(255, 255, 255, .14); color: #fff; }
+        .nav-links a[aria-current="page"] { background: rgba(255, 255, 255, .18); color: #fff; }
+        .nav-links a.cta { background: var(--cg-accent); color: #fff; margin-left: 6px; }
+        .nav-links a.cta:hover { background: var(--cg-accent-dark); }
+        .nav-toggle {
+            display: none; background: transparent; color: #fff;
+            border: 1px solid rgba(255, 255, 255, .55); border-radius: 8px;
+            padding: 8px 14px; font-size: 15px; cursor: pointer;
+        }
+
+        /* ================= Page containers ================= */
         .container {
-            max-width: 900px;
-            margin: 48px auto;
-            padding: 32px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            max-width: 1000px; margin: 40px auto 32px; padding: 32px;
+            background: var(--cg-surface); border-radius: 16px; box-shadow: var(--cg-shadow);
+            border: 1px solid var(--cg-border);
+        }
+        .container.narrow { max-width: 460px; }
+        /* "plain" pages draw their own cards on the page background */
+        .container.plain {
+            max-width: 1120px; padding: 0 20px; background: transparent;
+            box-shadow: none; border: 0; border-radius: 0; margin: 28px auto 32px;
         }
 
-        .container.narrow {
-            max-width: 460px;
-        }
-
-        h1 {
-            color: #243b6b;
-            font-size: 30px;
-            line-height: 1.25;
-            margin-top: 0;
-        }
-
-        p {
-            line-height: 1.7;
-        }
-
+        /* ================= Messages ================= */
         .message {
-            padding: 12px 14px;
-            border-radius: 8px;
-            margin: 0 0 12px;
-            font-size: 14px;
-            line-height: 1.5;
-            background: #eef3ff;
-            border: 1px solid #c9d6f2;
+            padding: 12px 14px; border-radius: 10px; margin: 0 0 12px; font-size: 14px;
+            line-height: 1.5; background: var(--cg-primary-tint); border: 1px solid #c9d6f2;
         }
+        .message.error { background: var(--cg-danger-tint); border-color: #fca5a5; color: #7f1d1d; }
+        .message.success { background: var(--cg-success-tint); border-color: #86efac; color: #14532d; }
+        .container.plain > div[aria-live] { margin-bottom: 8px; }
 
-        .message.error {
-            background: #fdecea;
-            border-color: #f2b8b5;
-            color: #8a1c14;
+        /* ================= Forms ================= */
+        .form-field { margin-bottom: 18px; }
+        .form-field label, label.field-label {
+            display: block; font-weight: 600; color: var(--cg-text);
+            margin-bottom: 6px; font-size: 14px;
         }
-
-        .message.success {
-            background: #e8f6ec;
-            border-color: #b5dfc0;
-            color: #1c5a2b;
+        .form-field input, .form-field select, .form-field textarea {
+            width: 100%; padding: 11px 12px; border: 1px solid var(--cg-border-strong);
+            border-radius: 8px; font-size: 16px; font-family: inherit; background: #fff; color: var(--cg-text);
         }
-
-        .form-field {
-            margin-bottom: 18px;
+        .form-field input:focus, .form-field select:focus, .form-field textarea:focus {
+            border-color: var(--cg-accent);
         }
+        .form-field textarea { resize: vertical; }
+        .form-hint { font-size: 13px; color: var(--cg-muted); margin: 6px 0 0; line-height: 1.5; }
+        .form-footer { margin-top: 20px; font-size: 14px; }
+        .form-footer a { color: var(--cg-primary); }
 
-        .form-field label {
-            display: block;
-            font-weight: bold;
-            color: #243b6b;
-            margin-bottom: 6px;
-            font-size: 14px;
-        }
-
-        .form-field input {
-            width: 100%;
-            padding: 11px 12px;
-            border: 1px solid #b9c3d9;
-            border-radius: 6px;
-            font-size: 16px;
-        }
-
-        .form-hint {
-            font-size: 13px;
-            color: #55607a;
-            margin: 6px 0 0;
-            line-height: 1.5;
-        }
-
+        /* ================= Buttons ================= */
         .button {
-            display: inline-block;
-            padding: 12px 17px;
-            border-radius: 6px;
-            background: #243b6b;
-            color: white;
-            border: 1px solid #243b6b;
-            cursor: pointer;
-            font-size: 15px;
+            display: inline-block; padding: 11px 18px; border-radius: 9px;
+            background: var(--cg-primary); color: #fff; border: 1px solid var(--cg-primary);
+            cursor: pointer; font-size: 15px; font-weight: 600; text-decoration: none;
+            font-family: inherit; line-height: 1.3; text-align: center;
+            transition: background .15s, border-color .15s, transform .05s, box-shadow .15s;
         }
-
-        .button.full {
-            width: 100%;
-        }
-
-        .form-footer {
-            margin-top: 20px;
-            font-size: 14px;
-        }
-
-        .form-footer a {
-            color: #243b6b;
-        }
-
-        @media (max-width: 650px) {
-            .container {
-                margin: 24px 14px;
-                padding: 22px;
-            }
-
-            h1 {
-                font-size: 26px;
-            }
-
-            .navbar {
-                padding: 14px 16px;
-            }
-        }
-
-        /* ---- M10 UI refresh: tokens, nicer base, responsive menu ---- */
-        :root {
-            --cg-primary: #243b6b;
-            --cg-primary-soft: #3a548a;
-            --cg-accent: #f5a623;
-            --cg-bg: #f4f6fb;
-            --cg-surface: #ffffff;
-            --cg-border: #d5dcf0;
-            --cg-text: #1f2937;
-            --cg-muted: #55607a;
-            --cg-radius: 12px;
-        }
-        body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: var(--cg-bg); color: var(--cg-text); }
-        .navbar { position: sticky; top: 0; z-index: 40; background: linear-gradient(90deg, #1d3159, var(--cg-primary)); box-shadow: 0 2px 10px rgba(0,0,0,.15); }
-        .nav-toggle { display: none; background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.5); border-radius: 8px; padding: 8px 12px; font-size: 15px; cursor: pointer; }
-        .container { max-width: 1000px; border-radius: 16px; }
-        .button { text-decoration: none; transition: background .15s, transform .05s; }
-        .button:hover { background: var(--cg-primary-soft); }
+        .button:hover { background: var(--cg-primary-soft); border-color: var(--cg-primary-soft); color: #fff; }
         .button:active { transform: translateY(1px); }
-        a { color: var(--cg-primary); }
+        .button.full { width: 100%; }
+        .button.secondary { background: var(--cg-primary-tint); color: var(--cg-primary); border-color: #c9d6f2; }
+        .button.secondary:hover { background: #dbe6ff; color: var(--cg-primary); }
+        .button.accent { background: var(--cg-accent); border-color: var(--cg-accent); }
+        .button.accent:hover { background: var(--cg-accent-dark); border-color: var(--cg-accent-dark); }
+        .button.light { background: #fff; color: var(--cg-primary); border-color: #fff; }
+        .button.light:hover { background: #e2e8f0; color: var(--cg-primary); }
+        .button.outline-light { background: transparent; color: #fff; border-color: rgba(255, 255, 255, .6); }
+        .button.outline-light:hover { background: rgba(255, 255, 255, .14); color: #fff; }
+
+        /* ================= Shared components ================= */
+        .card {
+            background: var(--cg-surface); border: 1px solid var(--cg-border);
+            border-radius: var(--cg-radius); box-shadow: var(--cg-shadow); padding: 22px;
+        }
+        .badge {
+            display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px;
+            font-weight: 600; background: #e2e8f0; color: #334155;
+        }
+        .badge.demo, .badge.warn { background: var(--cg-warn-tint); color: var(--cg-warn); }
+        .badge.ok { background: var(--cg-success-tint); color: var(--cg-success); }
+        .badge.partner { background: #e0e7ff; color: #3730a3; }
+        .badge.accent { background: var(--cg-accent-tint); color: var(--cg-accent); }
+        .eyebrow {
+            display: inline-block; color: var(--cg-accent); font-size: 13px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: .08em;
+        }
+        .callout {
+            padding: 14px 16px; border-radius: 10px; background: var(--cg-primary-tint);
+            border: 1px solid #c9d6f2; line-height: 1.6; font-size: 14px;
+        }
+
         table.data { width: 100%; border-collapse: collapse; margin: 10px 0 20px; font-size: 15px; }
-        table.data th, table.data td { padding: 10px 12px; border-bottom: 1px solid #e3e8f5; text-align: left; vertical-align: top; }
-        table.data thead th { background: #eef2fb; color: var(--cg-primary); font-size: 13px; text-transform: uppercase; letter-spacing: .03em; }
-        table.data tbody tr:nth-child(even) { background: #f8f9fd; }
-        @media (max-width: 960px) {
+        table.data th, table.data td { padding: 10px 12px; border-bottom: 1px solid var(--cg-border); text-align: left; vertical-align: top; }
+        table.data thead th { background: var(--cg-primary-tint); color: var(--cg-primary); font-size: 13px; text-transform: uppercase; letter-spacing: .03em; }
+        table.data tbody tr:nth-child(even) { background: var(--cg-bg); }
+
+        /* ================= Footer ================= */
+        .site-footer {
+            max-width: 1120px; margin: 0 auto 90px; padding: 20px 20px 0;
+            border-top: 1px solid var(--cg-border); font-size: 14px; color: var(--cg-muted);
+            display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: space-between;
+        }
+
+        /* ================= Responsive ================= */
+        @media (max-width: 1100px) {
             .nav-toggle { display: inline-block; }
-            .js .nav-links { display: none; width: 100%; flex-direction: column; align-items: stretch; gap: 2px; }
+            .js .nav-links { display: none; width: 100%; flex-direction: column; align-items: stretch; gap: 2px; padding-bottom: 8px; }
             .js .nav-links.open { display: flex; }
             .js .nav-links a { padding: 12px; font-size: 16px; }
-            .navbar { align-items: center; }
+            .js .nav-links a.cta { margin-left: 0; text-align: center; margin-top: 4px; }
         }
         @media (max-width: 650px) {
+            .container { margin: 20px 14px; padding: 22px; }
+            .container.plain { margin: 18px auto 24px; padding: 0 14px; }
+            h1 { font-size: 26px; }
+            .nav-inner { padding: 10px 16px; }
             table.data { display: block; overflow-x: auto; white-space: nowrap; }
+            .site-footer { padding: 18px 14px 0; }
         }
-        .site-footer { max-width: 1000px; margin: -20px auto 90px; padding: 0 20px; font-size: 14px; color: var(--cg-muted); display: flex; flex-wrap: wrap; gap: 6px 18px; }
-        @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+        @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
     </style>
     <script>document.documentElement.classList.add('js');</script>
     {% block extra_head %}{% endblock %}
 </head>
 
 <body>
+    {% with current=request.resolver_match.url_name %}
     <nav class="navbar" aria-label="Main navigation">
-        <a class="brand" href="{% url 'home' %}">Career Gateway</a>
-        <button type="button" class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="nav-links">Menu</button>
+        <div class="nav-inner">
+            <a class="brand" href="{% url 'home' %}"><span class="brand-mark" aria-hidden="true">CG</span><span>Career Gateway</span></a>
+            <button type="button" class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="nav-links">Menu</button>
 
-        <div class="nav-links" id="nav-links">
-            <a href="{% url 'home' %}">Home</a>
-            <a href="{% url 'careers' %}">Explore Careers</a>
-            <a href="{% url 'colleges' %}">Colleges</a>
-            <a href="{% url 'opportunities' %}">Opportunities</a>
-            <a href="{% url 'mentors' %}">Mentors</a>
-            <a href="{% url 'school' %}">Schools</a>
-            <a href="{% url 'ask' %}">Ask</a>
+            <div class="nav-links" id="nav-links">
+                <a href="{% url 'home' %}"{% if current == 'home' %} aria-current="page"{% endif %}>Home</a>
+                <a href="{% url 'careers' %}"{% if current == 'careers' or current == 'career_detail' %} aria-current="page"{% endif %}>Explore Careers</a>
+                <a href="{% url 'colleges' %}"{% if current == 'colleges' or current == 'college_detail' or current == 'college_recommend' %} aria-current="page"{% endif %}>Colleges</a>
+                <a href="{% url 'opportunities' %}"{% if current == 'opportunities' or current == 'opportunity_detail' or current == 'opportunity_recommend' %} aria-current="page"{% endif %}>Opportunities</a>
+                <a href="{% url 'mentors' %}"{% if current == 'mentors' or current == 'mentor_detail' %} aria-current="page"{% endif %}>Mentors</a>
+                <a href="{% url 'school' %}"{% if current == 'school' %} aria-current="page"{% endif %}>Schools</a>
+                <a href="{% url 'ask' %}"{% if current == 'ask' %} aria-current="page"{% endif %}>Ask</a>
 
-            {% if user.is_authenticated %}
-                <a href="{% url 'assistant' %}">Career Assistant</a>
-                <a href="{% url 'my_requests' %}">My Requests</a>
-                <a href="{% url 'profile' %}">My Profile</a>
-                {% if user.is_staff %}<a href="{% url 'lead_dashboard' %}">Lead Dashboard</a><a href="{% url 'school_dashboard' %}">School Dashboard</a>{% endif %}
-            {% else %}
-                <a href="{% url 'login' %}">Log In</a>
-                <a href="{% url 'signup' %}">Sign Up</a>
-            {% endif %}
+                {% if user.is_authenticated %}
+                    <a href="{% url 'assistant' %}"{% if current == 'assistant' %} aria-current="page"{% endif %}>Career Assistant</a>
+                    <a href="{% url 'my_requests' %}"{% if current == 'my_requests' %} aria-current="page"{% endif %}>My Requests</a>
+                    <a href="{% url 'profile' %}"{% if current == 'profile' %} aria-current="page"{% endif %}>My Profile</a>
+                    {% if user.is_staff %}<a href="{% url 'lead_dashboard' %}">Lead Dashboard</a><a href="{% url 'school_dashboard' %}">School Dashboard</a>{% endif %}
+                {% else %}
+                    <a href="{% url 'login' %}"{% if current == 'login' %} aria-current="page"{% endif %}>Log In</a>
+                    <a href="{% url 'signup' %}" class="cta">Sign Up</a>
+                {% endif %}
+            </div>
         </div>
     </nav>
+    {% endwith %}
 
     <main class="container {% block container_class %}{% endblock %}">
         {% if messages %}
