@@ -1,0 +1,60 @@
+{% if show %}
+<section class="step-card" id="profile-step" aria-labelledby="profile-step-title">
+    <style>
+        .step-card { background: var(--cg-surface); border: 1px solid var(--cg-border); border-left: 5px solid var(--cg-accent); border-radius: 14px; padding: 22px 26px; margin-bottom: 20px; box-shadow: var(--cg-shadow); }
+        .step-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+        .step-card h2 { margin: 0; font-size: 18px; }
+        .step-count { font-size: 13px; font-weight: 600; color: var(--cg-accent-dark); }
+        .step-bar { height: 8px; background: var(--cg-border); border-radius: 999px; overflow: hidden; margin: 12px 0 16px; }
+        .step-bar span { display: block; height: 100%; background: var(--cg-accent); border-radius: 999px; }
+        .step-card label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 16px; }
+        .step-card input[type="text"], .step-card input[type="number"] { width: 100%; padding: 12px; border: 1px solid var(--cg-border-strong); border-radius: 10px; font-size: 16px; font-family: inherit; background: #fff; color: var(--cg-text); }
+        .step-hint { font-size: 13px; color: var(--cg-muted); margin: 6px 0 0; }
+        .step-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; align-items: center; }
+        .step-actions form { margin: 0; }
+        .step-note { font-size: 13px; color: var(--cg-muted); margin: 14px 0 0; }
+        .step-link { background: none; border: 0; padding: 0; color: var(--cg-primary); text-decoration: underline; cursor: pointer; font: inherit; }
+        @media (max-width: 650px) { .step-card { padding: 18px; } .step-actions .button { width: 100%; } }
+    </style>
+
+    <div class="step-top">
+        <h2 id="profile-step-title">Complete your profile</h2>
+        <span class="step-count">{{ done }} of {{ total }} answered</span>
+    </div>
+    <div class="step-bar" role="progressbar" aria-valuemin="0" aria-valuemax="{{ total }}" aria-valuenow="{{ done }}" aria-label="Profile completion"><span style="width: {{ percent }}%"></span></div>
+
+    {% if question %}
+        <form method="post" action="{% url 'profile_step' %}">
+            {% csrf_token %}
+            <input type="hidden" name="field" value="{{ question.key }}">
+            <label for="step-value">{{ question.label }}</label>
+            {% if question.kind == "number" %}
+                <input type="number" id="step-value" name="value" inputmode="decimal" {% if question.key == "age" %}min="1" max="120" step="1"{% else %}min="0" step="0.01"{% endif %} placeholder="{{ question.placeholder }}" required autocomplete="off">
+            {% else %}
+                <input type="text" id="step-value" name="value" maxlength="500" placeholder="{{ question.placeholder }}" required autocomplete="off"{% if question.suggestions %} list="step-suggestions"{% endif %}>
+                {% if question.suggestions %}
+                    <datalist id="step-suggestions">
+                        {% for s in question.suggestions %}<option value="{{ s }}">{% endfor %}
+                    </datalist>
+                {% endif %}
+            {% endif %}
+            {% if question.hint %}<p class="step-hint">{{ question.hint }}</p>{% endif %}
+
+            <div class="step-actions">
+                <button type="submit" name="action" value="save" class="button accent">Save and next</button>
+                <button type="submit" name="action" value="skip" class="button secondary" formnovalidate>Skip</button>
+            </div>
+        </form>
+        <p class="step-note">Only what you type is saved. You can change any answer later on your profile page.</p>
+    {% endif %}
+
+    {% if skipped_count %}
+        <form method="post" action="{% url 'profile_step' %}" class="step-note">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="reset">
+            {% if not question %}You skipped {{ skipped_count }} question{{ skipped_count|pluralize }}.{% endif %}
+            <button type="submit" class="step-link">Ask {{ skipped_count }} skipped question{{ skipped_count|pluralize }} again</button>
+        </form>
+    {% endif %}
+</section>
+{% endif %}

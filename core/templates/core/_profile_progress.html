@@ -1,0 +1,14 @@
+{% if show %}
+<div class="progress-strip" role="group" aria-label="Profile completion">
+    <style>
+        .progress-strip { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--cg-surface); border: 1px solid var(--cg-border); border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; box-shadow: var(--cg-shadow); }
+        .progress-strip .bar { flex: 1 1 160px; height: 8px; background: var(--cg-border); border-radius: 999px; overflow: hidden; }
+        .progress-strip .bar span { display: block; height: 100%; background: var(--cg-accent); border-radius: 999px; }
+        .progress-strip .txt { font-size: 14px; font-weight: 600; color: var(--cg-text); }
+        .progress-strip a { font-weight: 600; font-size: 14px; }
+    </style>
+    <span class="txt">Profile: {{ done }} of {{ total }} answered</span>
+    <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="{{ total }}" aria-valuenow="{{ done }}"><span style="width: {{ percent }}%"></span></div>
+    {% if not complete %}<a href="{% url 'assistant' %}#profile-step">Answer a few quick questions</a>{% endif %}
+</div>
+{% endif %}

@@ -1,4 +1,5 @@
 {% extends "core/base.html" %}
+{% load profile_tags %}
 
 {% block title %}My Profile | Career Gateway{% endblock %}
 {% block container_class %}plain{% endblock %}
@@ -46,6 +47,8 @@
             your interests and provide relevant career guidance.
         </p>
     </div>
+
+    {% profile_progress_bar %}
 
     <section class="panel">
         <h2>Saved Details</h2>
