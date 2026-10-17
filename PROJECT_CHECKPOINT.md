@@ -45,7 +45,7 @@ Status key: NS = not started, PI = partially implemented (code exists, not fully
 | REQ-02.9 | 2 | Recommend human counselling when appropriate | NS | |
 | REQ-02.10 | 2 | Capture and qualify leads | NS | |
 | REQ-03 | 3 | Welcome message + 7 starting options (career, course, colleges, scholarships, talk to professional, roadmap, "I don't know") | NS | Assistant has a different greeting, no option buttons |
-| REQ-04 | 4 | Profile built gradually by the bot (10 fields) | PI | Fields exist; gradual conversational capture missing |
+| REQ-04 | 4 | Profile built gradually by the bot (10 fields) | DONE | Assistant page asks one question at a time (10 fields, Skip, progress, validation); fixed questions, not free-text extraction |
 | REQ-05 | 5 | Discovery mode: explore several options, not one "best"; student picks one to go deeper | PI | Top-3 shown; no drill-down choice |
 | REQ-06 | 6 | Career card with 10 fields (what they do, education, exams, skills, pathway, roles, higher education, work environments, insights, FAQs) + next step to counsellor/mentor | PI | Has ~6 of 10; missing higher education, work environments, insights, FAQs; no counsellor/mentor link |
 | REQ-07.1 | 7 | College DB fields (11) | PI | Missing scholarships, hostel, placement, partner status |
@@ -175,5 +175,5 @@ The tests lock in CURRENT behaviour, not ideal behaviour. For example, profile f
 - `/how-it-works/` architecture page (PDF section 12).
 - Deploy readiness (PDF section 16): `DATABASE_URL` selects PostgreSQL (`config/dbconfig.py`), whitenoise and gunicorn in requirements (UTF-8 now), `DJANGO_SECURE_DEPLOY` hardening, `CSRF_TRUSTED_ORIGINS` from env. See DEPLOY.md.
 - Docs: README.md, VIVA_NOTES.md, DEPLOY.md.
-- NOT DONE (future work, stated honestly): embeddings and vector database (retrieval is word-based), chat-based gradual profile capture (section 4), real booking, payments, SMS and email, per-school environments and teacher accounts, real verified data.
-- Tests: 304 in the build sandbox.
+- NOT DONE (future work, stated honestly): embeddings and vector database (retrieval is word-based), free-text conversational profile extraction (profile capture is guided one-question-at-a-time), real booking, payments, SMS and email, per-school environments and teacher accounts, real verified data.
+- Tests: 340 on the developer machine (all passing).

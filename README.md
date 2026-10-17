@@ -29,7 +29,7 @@ students explore and then connects them to a human counsellor. It does not repla
 - **No booking, payments, SMS or email sending.** Requests are recorded as leads. Pages say that nothing is booked.
 - The language model can still make mistakes. It is told to answer only from the retrieved records and to say so when it cannot.
 - Free AI services may use question text to improve their products, so the pages ask users not to enter personal details. Only the question and public record text are sent to the model, never profile or contact data.
-- Gradual profile building inside the chat (section 4) is not done; the profile is a form.
+- Gradual profile building (section 4) is done as guided questions: the Assistant page asks one profile question at a time, with Skip and a progress bar, and saves only what the student types. It is not free-text conversation, so the assistant does not extract details from sentences.
 - School version has programs, registration and a dashboard, but no separate per-school environments or teacher accounts yet.
 
 ## Run it locally (Windows PowerShell)
