@@ -229,7 +229,7 @@
                     <a href="{% url 'assistant' %}"{% if current == 'assistant' %} aria-current="page"{% endif %}>Career Assistant</a>
                     <a href="{% url 'my_requests' %}"{% if current == 'my_requests' %} aria-current="page"{% endif %}>My Requests</a>
                     <a href="{% url 'profile' %}"{% if current == 'profile' %} aria-current="page"{% endif %}>My Profile</a>
-                    {% if user.is_staff %}<a href="{% url 'lead_dashboard' %}">Lead Dashboard</a><a href="{% url 'school_dashboard' %}">School Dashboard</a>{% endif %}
+                {% if user.is_staff %}<a href="{% url 'lead_dashboard' %}">Lead Dashboard</a><a href="{% url 'school_dashboard' %}">School Dashboard</a><a href="{% url 'admin:index' %}">Admin</a>{% endif %}
                 {% else %}
                     <a href="{% url 'login' %}"{% if current == 'login' %} aria-current="page"{% endif %}>Log In</a>
                     <a href="{% url 'signup' %}" class="cta">Sign Up</a>
