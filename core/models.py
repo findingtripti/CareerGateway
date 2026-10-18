@@ -537,3 +537,27 @@ class SchoolRegistration(models.Model):
 
     def __str__(self):
         return f"Registration {self.pk} for {self.program}"
+
+
+
+
+class RecordEmbedding(models.Model):
+    """One embedding (meaning vector) per published record, for retrieval.
+
+    `source_key` is the record's page URL, which is unique per record. The
+    vector is a unit-length list of floats stored as JSON. Rebuild with
+    `python manage.py build_embeddings`.
+    """
+
+    source_key = models.CharField(max_length=300, unique=True)
+    kind = models.CharField(max_length=40)
+    title = models.CharField(max_length=300)
+    text_hash = models.CharField(max_length=64)
+    model = models.CharField(max_length=100)
+    dimensions = models.PositiveSmallIntegerField()
+    vector = models.JSONField()
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.kind}: {self.title}"
+
