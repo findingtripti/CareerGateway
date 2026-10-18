@@ -24,7 +24,7 @@ students explore and then connects them to a human counsellor. It does not repla
 
 ## Honest limits (please read)
 
-- **Embeddings and a vector database are not built.** Retrieval is word-overlap ranking over the knowledge base. This is the main gap against section 13/16 of the plan. It is documented as future work.
+- **No separate vector database.** Meaning-based search uses Gemini embeddings stored in the project's own database (vectors as JSON, cosine similarity), combined with word-overlap ranking. If embeddings are off or the API fails, retrieval falls back to word overlap. A dedicated vector store such as pgvector is the production upgrade.
 - **All colleges, opportunities and mentors in the demo are fictional** and labelled that way. Knowledge entries and career texts are **not verified** yet and are labelled that way.
 - **No booking, payments, SMS or email sending.** Requests are recorded as leads. Pages say that nothing is booked.
 - The language model can still make mistakes. It is told to answer only from the retrieved records and to say so when it cannot.

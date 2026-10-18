@@ -175,5 +175,13 @@ The tests lock in CURRENT behaviour, not ideal behaviour. For example, profile f
 - `/how-it-works/` architecture page (PDF section 12).
 - Deploy readiness (PDF section 16): `DATABASE_URL` selects PostgreSQL (`config/dbconfig.py`), whitenoise and gunicorn in requirements (UTF-8 now), `DJANGO_SECURE_DEPLOY` hardening, `CSRF_TRUSTED_ORIGINS` from env. See DEPLOY.md.
 - Docs: README.md, VIVA_NOTES.md, DEPLOY.md.
-- NOT DONE (future work, stated honestly): embeddings and vector database (retrieval is word-based), free-text conversational profile extraction (profile capture is guided one-question-at-a-time), real booking, payments, SMS and email, per-school environments and teacher accounts, real verified data.
-- Tests: 340 on the developer machine (all passing).
+- NOT DONE (future work, stated honestly): a dedicated vector database such as pgvector (embeddings are stored in the app database), free-text conversational profile extraction (profile capture is guided one-question-at-a-time), real booking, payments, SMS and email, per-school environments and teacher accounts, real verified data.
+- Tests: 384 on the developer machine (all passing).
+
+## Milestone - Embeddings and hybrid retrieval (PDF section 16) [REQ-16 embeddings]
+- Built: Gemini embeddings (gemini-embedding-001, 768 dimensions) stored in the RecordEmbedding model; cosine similarity search; hybrid retrieval = word overlap + meaning, with a word-match bonus on meaning hits.
+- Fallback: if embeddings are off, not built, or the API fails, retrieval behaves exactly like the old word-overlap search.
+- Commands: `python manage.py build_embeddings` (resumable, --force to rebuild) and `python manage.py check_embeddings` (words-only vs with-meaning comparison).
+- Live check: for 'I like protecting websites from hackers' words-only found entrance-exam FAQs; meaning found Cybersecurity (0.66) and the Security Analyst mentor (0.62).
+- Honest limit: vectors are JSON in the app database, not a dedicated vector DB; Gemini free-tier embedding quota is not officially confirmed.
+- Commit: f4fbb5a. Tests: 384 passing.

@@ -24,6 +24,7 @@ databases expire.
 | LLM_PROVIDER | gemini (or none) |
 | GEMINI_API_KEY | your free key (paste it only into the host's secret settings) |
 | GEMINI_MODEL / GEMINI_FALLBACK_MODEL | e.g. gemini-3.5-flash-lite / gemini-3.1-flash-lite |
+| GEMINI_EMBEDDING_MODEL | gemini-embedding-001 (optional; this is the default) |
 
 Ollama needs a computer you control, so on a normal free host use Gemini or `none`.
 
@@ -45,6 +46,8 @@ python manage.py seed_demo_colleges
 python manage.py seed_demo_opportunities
 python manage.py seed_demo_mentors
 python manage.py seed_demo_school_programs
+# Needs GEMINI_API_KEY. Safe to re-run; resumes where it stopped.
+python manage.py build_embeddings
 python manage.py createsuperuser
 ```
 
